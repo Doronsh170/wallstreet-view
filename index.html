@@ -328,12 +328,12 @@ function render(){renderHome();renderHero();renderPeers();renderDecision();updat
 function key(){return(document.getElementById("apiKey").value||localStorage.getItem(KEY)||"").trim()}
 
 function effectivePhase(){return "regular"}
-function dataModeLabel(p){return "מסחר פעיל"}
+function dataModeLabel(p){let s=nyPhase();if(s==="regular")return "מסחר פעיל";if(s==="pre")return "טרום מסחר · נתון רגיל אחרון";if(s==="after")return "מסחר מאוחר · נתון רגיל אחרון";return "שוק סגור · נתון מסחר רגיל אחרון"}
 function setDataMode(p){dataMode="regular";render();setTimeout(()=>fetchGroup("mode"),50)}
 function updateDataModeButtons(){}
 function nyPhase(){let parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());let m=Object.fromEntries(parts.map(p=>[p.type,p.value]));let wd=m.weekday,min=(+m.hour)*60+(+m.minute);if(wd==="Sat"||wd==="Sun")return"closed";if(min>=240&&min<570)return"pre";if(min>=570&&min<960)return"regular";if(min>=960&&min<1200)return"after";return"closed"}
 const YAHOO_WORKER_BASE="https://momentum-yahoo-prices.sh6doron.workers.dev/";
-function srcLabel(src){return src==="finnhub"?"Finnhub · fallback":src==="worker-regular"?"Yahoo Worker · regular":src==="worker-pre"?"Yahoo Worker · pre-market":src==="worker-after"?"Yahoo Worker · after-hours":src==="worker-closed"?"Yahoo Worker · last available":src==="finnhub-last"?"Finnhub · fallback":""}
+function srcLabel(src){return src==="finnhub"?"Finnhub · fallback":src==="worker-regular"?"Yahoo Worker · regular / last":src==="worker-pre"?"Yahoo Worker · pre-market":src==="worker-after"?"Yahoo Worker · after-hours":src==="worker-closed"?"Yahoo Worker · last available":src==="finnhub-last"?"Finnhub · fallback":""}
 function nyFullParts(d=new Date()){let parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(d);let m=Object.fromEntries(parts.map(p=>[p.type,p.value]));return{y:+m.year,mo:+m.month,d:+m.day,h:+m.hour,mi:+m.minute,s:+m.second}}
 function sameNyDay(a,b){return a.y===b.y&&a.mo===b.mo&&a.d===b.d}
 function freshExtendedTs(ts,phase){if(phase!=="pre"&&phase!=="after")return true;if(!Number.isFinite(ts)||ts<=0)return false;let p=nyFullParts(new Date(ts*1000)),now=nyFullParts();if(!sameNyDay(p,now))return false;let min=p.h*60+p.mi;if(phase==="pre")return min>=240&&min<570;if(phase==="after")return min>=960&&min<1200;return true}
