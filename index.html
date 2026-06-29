@@ -240,6 +240,15 @@ body.light #preMarketBtn.active{
   background:#2563eb !important;
   border-color:#1d4ed8 !important;
 }
+.preMissing{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#475569;
+  color:#ffffff;
+  font-weight:900;
+  font-size:12px;
+}
 
 </style>
 </head>
@@ -323,6 +332,7 @@ function avg(a){a=a.filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,
 function day(x){return x&&Number.isFinite(x.c)&&Number.isFinite(x.pc)&&x.pc?((x.c/x.pc)-1)*100:null}
 function cls(x){if(!Number.isFinite(x))return"wait";return x>0?"pos":x<0?"neg":"wait"}
 function pct(x){return Number.isFinite(x)?(x>0?"+":"")+x.toFixed(2)+"%":"מחכה"}
+function pctDisplay(x){return Number.isFinite(x)?pct(x):(dataMode==="pre"?'<span class="preMissing">אין נתון טרום זמין</span>':"מחכה")}
 function relBadge(s){return `<span class="relStatus ${s.cl}">${s.text}</span>`}
 function price(x){return Number.isFinite(x)?x.toFixed(x>=100?2:3):""}
 function addHist(t,p){if(!Number.isFinite(p))return;t=t.toUpperCase();if(!hist[t])hist[t]=[];hist[t].push({t:Date.now(),p});hist[t]=hist[t].filter(x=>x.t>Date.now()-7200000)}
@@ -344,14 +354,14 @@ function renderHome(){let cats=[...new Map(A.map(a=>[a.category,a.category])).va
 function dashboardHtml(){let unique=[...new Map(A.map(a=>[a.ticker,a])).values()];let themes=[...new Set(A.map(a=>a.theme))];let cats=[...new Set(A.map(a=>a.category))];return `<div><div class="kicker">Momentum Desk</div><h2>מפת סקטורים ותתי־סקטורים</h2><p>כלי עבודה לסידור מניות וול סטריט לפי תחום, קבוצת השוואה וקישור ישיר לגרף. המטרה היא להתחיל כל בדיקה מההקשר הנכון.</p></div><div class="stats"><div class="stat"><strong>${unique.length}</strong><span>מניות</span></div><div class="stat"><strong>${themes.length}</strong><span>קבוצות</span></div><div class="stat"><strong>${cats.length}</strong><span>קטגוריות</span></div></div>`}
 function renderHero(){let e=document.getElementById("hero"),sel=document.getElementById("selectedArea"),action=document.getElementById("actionBar"),home=document.getElementById("homeMap"),m=matches(ticker);if(!ticker){sel.classList.remove("show");action.classList.remove("show");document.getElementById("peerBox").classList.remove("show");home.style.display="grid";e.innerHTML=dashboardHtml();return}home.style.display="none";if(!m.length){sel.classList.remove("show");action.classList.remove("show");document.getElementById("peerBox").classList.remove("show");e.innerHTML=`<div><div class="kicker">לא נמצא</div><h2>${ticker}</h2><p>הסימבול לא קיים ביקום העבודה.</p></div>`;return}sel.classList.add("show");action.classList.add("show");let a=m.find(x=>x.theme===theme)||m[0];let tabs=m.length>1?'<div class="tabs">'+m.map(x=>`<button class="tab ${x.theme===theme?'active':''}" onclick="switchTheme('${x.theme.replaceAll("'","\\'")}')">${x.theme}</button>`).join("")+"</div>":"";document.getElementById("selectedCard").innerHTML=`<div class="kicker">סימבול נבחר</div><div class="selectedTicker">${ticker}</div><div class="selectedName">${a.name}</div><div class="selectedTheme">${theme}</div><a class="button tvBtn" target="_blank" rel="noopener" href="${tv(a.tvSymbol)}">פתח TradingView</a>${tabs}`;e.innerHTML=dashboardHtml()}
 function togglePeers(){if(!ticker){note("בחר מניה קודם");return}if(!matches(ticker).length){note(ticker+" לא נמצא ביקום");return}peersOpen=!peersOpen;renderPeers()}
-function renderPeers(){let box=document.getElementById("peerBox"),btn=document.getElementById("togglePeersBtn"),cnt=document.getElementById("peerCount"),el=document.getElementById("peers");if(!box||!btn||!cnt||!el)return;if(!ticker||!matches(ticker).length){box.classList.remove("show");btn.disabled=true;btn.textContent="בחר מניה כדי לפתוח קבוצת השוואה";cnt.textContent="";el.innerHTML="";return}btn.disabled=false;btn.textContent=peersOpen?"סגור את קבוצת ההשוואה":"פתח את כל המניות בקבוצה";if(!peersOpen){box.classList.remove("show");cnt.textContent="";el.innerHTML="";return}let p=assets();box.classList.add("show");cnt.textContent=p.length+" מניות";el.innerHTML=p.map(a=>{let d=day(q(a.ticker));return `<a class="peerRow ${a.ticker===ticker?'target':''}" target="_blank" rel="noopener" href="${tv(a.tvSymbol)}"><span class="peerSym">${a.ticker}</span><span class="peerName">${a.name}</span><span class="peerPct ${cls(d)}">${pct(d)}</span><span class="peerOpen">↗</span></a>`}).join("")}
+function renderPeers(){let box=document.getElementById("peerBox"),btn=document.getElementById("togglePeersBtn"),cnt=document.getElementById("peerCount"),el=document.getElementById("peers");if(!box||!btn||!cnt||!el)return;if(!ticker||!matches(ticker).length){box.classList.remove("show");btn.disabled=true;btn.textContent="בחר מניה כדי לפתוח קבוצת השוואה";cnt.textContent="";el.innerHTML="";return}btn.disabled=false;btn.textContent=peersOpen?"סגור את קבוצת ההשוואה":"פתח את כל המניות בקבוצה";if(!peersOpen){box.classList.remove("show");cnt.textContent="";el.innerHTML="";return}let p=assets();box.classList.add("show");cnt.textContent=p.length+" מניות";el.innerHTML=p.map(a=>{let d=day(q(a.ticker));return `<a class="peerRow ${a.ticker===ticker?'target':''}" target="_blank" rel="noopener" href="${tv(a.tvSymbol)}"><span class="peerSym">${a.ticker}</span><span class="peerName">${a.name}</span><span class="peerPct ${cls(d)}">${pctDisplay(d)}</span><span class="peerOpen">↗</span></a>`}).join("")}
 function renderDecision(){let r=rows(),have=r.some(x=>Number.isFinite(x.c.od)),lead=r[0],lag=[...r].reverse()[0],tar=r.find(x=>x.a.ticker===ticker);document.getElementById("leaderVal").innerHTML=have&&lead?`${lead.a.ticker} · ${relBadge(lead.s)}`:"מחכה";document.getElementById("laggardVal").innerHTML=have&&lag?`${lag.a.ticker} · ${relBadge(lag.s)}`:"מחכה";document.getElementById("targetVal").innerHTML=tar?relBadge(tar.s):"מחכה"}
 function render(){renderHome();renderHero();renderPeers();renderDecision();updateAuto();updateDataModeButtons()}
 function key(){return(document.getElementById("apiKey").value||localStorage.getItem(KEY)||"").trim()}
 
 
 function effectivePhase(){return dataMode==="pre"?"pre":"regular"}
-function dataModeLabel(p){if(dataMode==="pre")return "טרום מסחר · שינוי טרום בלבד";let s=nyPhase();if(s==="regular")return "מסחר פעיל";if(s==="pre")return "טרום מסחר · נתון רגיל אחרון";if(s==="after")return "מסחר מאוחר · נתון רגיל אחרון";return "שוק סגור · נתון מסחר רגיל אחרון"}
+function dataModeLabel(p){if(dataMode==="pre")return "טרום מסחר";let s=nyPhase();if(s==="regular")return "מסחר פעיל";if(s==="pre")return "טרום מסחר · נתון רגיל אחרון";if(s==="after")return "מסחר מאוחר · נתון רגיל אחרון";return "שוק סגור · נתון מסחר רגיל אחרון"}
 function togglePreMarket(){dataMode=dataMode==="pre"?"regular":"pre";localStorage.setItem("momentum_desk_pre_market_on_v20",dataMode==="pre"?"1":"0");abortFetch();quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);lastFetchMs=0;localStorage.removeItem(LTS);updatePreMarketButton();render();setTimeout(()=>fetchGroup("pre-toggle"),50)}
 function setDataMode(p){dataMode=p==="pre"?"pre":"regular";localStorage.setItem("momentum_desk_pre_market_on_v20",dataMode==="pre"?"1":"0");updatePreMarketButton();render();setTimeout(()=>fetchGroup("mode"),50)}
 function updateDataModeButtons(){updatePreMarketButton()}
@@ -367,8 +377,6 @@ async function fetchJson(url,sig,label){let timeout=new Promise((_,rej)=>setTime
 function yahooSymbol(a){return(a.tvSymbol||a.ticker).replace(/^NASDAQ:/,"").replace(/^NYSE:/,"").replace(/^AMEX:/,"").replace(/\./g,"-")}
 
 
-
-
 function pickYahooPrice(d,phase){
   let regular=+d.regularMarketPrice;
   let previous=+d.previousClose;
@@ -378,29 +386,25 @@ function pickYahooPrice(d,phase){
   let preChangePct=+d.preMarketChangePercent;
 
   if(phase==="pre"){
-    let p=Number.isFinite(pre)&&pre>0?pre:null;
-    if(!Number.isFinite(p)||p<=0) return{p:null,pc:null};
-
+    if(!Number.isFinite(pre)||pre<=0) return{p:null,pc:null,preOnly:true};
     if(Number.isFinite(preChangePct)){
-      let pc=p/(1+(preChangePct/100));
-      return{p,pc}
+      let pc=pre/(1+(preChangePct/100));
+      return{p:pre,pc,preOnly:true}
     }
-
     if(Number.isFinite(preChange)){
-      let pc=p-preChange;
-      return{p,pc}
+      let pc=pre-preChange;
+      return{p:pre,pc,preOnly:true}
     }
-
-    return{p:null,pc:null}
+    return{p:null,pc:null,preOnly:true}
   }
 
   let p=Number.isFinite(regular)&&regular>0?regular:generic;
   let pc=Number.isFinite(previous)&&previous>0?previous:null;
-  return{p,pc}
+  return{p,pc,preOnly:false}
 }
 
-async function workerOne(a,phase,sig){let ysym=yahooSymbol(a);let url=YAHOO_WORKER_BASE+`?symbol=${encodeURIComponent(ysym)}&_=${Date.now()}`;let d=await fetchJson(url,sig,"Yahoo Worker");let picked=pickYahooPrice(d,phase),p=picked.p,pc=picked.pc,t=+d.time;if(!Number.isFinite(p)||p===0)throw new Error(phase==="pre"?"אין נתון שינוי טרום אמיתי":"Worker no price");if(!freshExtendedTs(t,phase))throw new Error("Yahoo stale / no extended trade");quotes[a.ticker]={c:p,pc:Number.isFinite(pc)&&pc!==0?pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),mode:phase};addHist(a.ticker,p);return"worker"}
-async function one(a,k,sig,phase){try{return await workerOne(a,phase,sig)}catch(e){log(a.ticker+": "+e.message+", Yahoo bridge failed");if(phase==="pre")throw e;if(k){log(a.ticker+": fallback to Finnhub");await finnhubOne(a,k,sig);quotes[a.ticker].src=srcLabel("finnhub-last");quotes[a.ticker].mode=phase;return"fallback"}throw e}}
+async function workerOne(a,phase,sig){let ysym=yahooSymbol(a);let url=YAHOO_WORKER_BASE+`?symbol=${encodeURIComponent(ysym)}&_=${Date.now()}`;let d=await fetchJson(url,sig,"Yahoo Worker");let picked=pickYahooPrice(d,phase),p=picked.p,pc=picked.pc,t=+d.time;if(phase==="pre"&&(!Number.isFinite(p)||p===0)){quotes[a.ticker]={c:null,pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:"אין נתון טרום",mode:phase};return"no-pre"}if(!Number.isFinite(p)||p===0)throw new Error("Worker no price");if(!freshExtendedTs(t,phase))throw new Error("Yahoo stale / no extended trade");quotes[a.ticker]={c:p,pc:Number.isFinite(pc)&&pc!==0?pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),mode:phase};addHist(a.ticker,p);return"worker"}
+async function one(a,k,sig,phase){try{return await workerOne(a,phase,sig)}catch(e){log(a.ticker+": "+e.message+", Yahoo bridge failed");if(phase==="pre"){quotes[a.ticker]={c:null,pc:null,t:Math.floor(Date.now()/1000),src:"אין נתון טרום",mode:phase};return"no-pre"}if(k){log(a.ticker+": fallback to Finnhub");await finnhubOne(a,k,sig);quotes[a.ticker].src=srcLabel("finnhub-last");quotes[a.ticker].mode=phase;return"fallback"}throw e}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 function fetchListForPhase(phase){let list=assets();let max=30,arr=[];if(ticker){let hit=list.find(x=>x.ticker===ticker);if(hit)arr.push(hit)}for(let a of list){if(arr.length>=max)break;if(!arr.some(x=>x.ticker===a.ticker))arr.push(a)}return arr}
 async function fetchGroup(src="auto"){if(busy){if(src==="auto")return;abortFetch();await sleep(80)}let k=key();let phase=effectivePhase();busy=true;ctrl=new AbortController();let myRun=++runSeq;let b=document.getElementById("refreshBtn");b.disabled=true;b.textContent="מרענן";let ok=0,fail=0,list=fetchListForPhase(phase);log(`Start phase=${phase} group=${theme} symbols=${list.length}`);try{for(let a of list){if(myRun!==runSeq)return;try{await one(a,k,ctrl.signal,phase);ok++;if(myRun!==runSeq)return;render();await sleep(phase==="regular"?120:220)}catch(e){if(String(e.message).includes("AbortError")||String(e.message).includes("aborted"))return;fail++;log(a.ticker+": "+e.message);if(String(e.message).includes("429"))break}}if(myRun!==runSeq)return;save(QS,quotes);save(HS,hist);lastFetchMs=Date.now();save(LTS,lastFetchMs);let tm=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});let label=dataModeLabel(phase);document.getElementById("lastUpdate").textContent="עודכן: "+tm+" · "+label;log(`Done ok=${ok} fail=${fail}`)}finally{if(myRun===runSeq){busy=false;ctrl=null;b.disabled=false;b.textContent="רענן עכשיו";render()}}}
