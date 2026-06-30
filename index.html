@@ -370,6 +370,45 @@ function yahooSymbol(a){return(a.tvSymbol||a.ticker).replace(/^NASDAQ:/,"").repl
 
 
 
+
+function normalizeWorkerQuote(raw,a,phase){
+  let d=raw;
+  if(raw&&raw.quoteResponse&&Array.isArray(raw.quoteResponse.result)){
+    let list=raw.quoteResponse.result;
+    let tkr=String(a.ticker||"").toUpperCase();
+    let ysym=yahooSymbol(a).toUpperCase();
+    d=list.find(x=>String(x.symbol||"").toUpperCase()===tkr)||list.find(x=>String(x.symbol||"").toUpperCase()===ysym)||list[0]||{};
+  }
+
+  let regular=+d.regularMarketPrice;
+  let previous=+d.previousClose;
+  let reference=+d.referenceClose;
+  let generic=+d.price;
+  let current=+d.currentPrice;
+  let extended=+d.extendedPrice;
+  let pre=+d.preMarketPrice;
+  if(!Number.isFinite(pre)||pre<=0) pre=+d.premarketPrice;
+
+  let t=+d.time;
+  if(!Number.isFinite(t)||t<=0) t=+d.preMarketTime;
+  if(!Number.isFinite(t)||t<=0) t=+d.premarketTime;
+  if(!Number.isFinite(t)||t<=0) t=+d.regularMarketTime;
+  if((!Number.isFinite(t)||t<=0) && d.currentTime){
+    let parsed=Date.parse(d.currentTime);
+    if(Number.isFinite(parsed)) t=Math.floor(parsed/1000);
+  }
+
+  if(phase==="pre"){
+    let p=Number.isFinite(pre)&&pre>0?pre:(Number.isFinite(extended)&&extended>0?extended:(Number.isFinite(generic)&&generic>0?generic:(Number.isFinite(current)&&current>0?current:null)));
+    let pc=Number.isFinite(reference)&&reference>0?reference:(Number.isFinite(regular)&&regular>0?regular:null);
+    return{p,pc,t}
+  }
+
+  let p=Number.isFinite(regular)&&regular>0?regular:(Number.isFinite(current)&&current>0?current:(Number.isFinite(generic)&&generic>0?generic:null));
+  let pc=Number.isFinite(previous)&&previous>0?previous:null;
+  return{p,pc,t}
+}
+
 function pickYahooPrice(d,phase){
   let regular=+d.regularMarketPrice;
   let previous=+d.previousClose;
@@ -387,7 +426,33 @@ function pickYahooPrice(d,phase){
   return{p,pc}
 }
 
-async function workerOne(a,phase,sig){let ysym=yahooSymbol(a);let url=YAHOO_WORKER_BASE+`?symbol=${encodeURIComponent(ysym)}&_=${Date.now()}`;let d=await fetchJson(url,sig,"Yahoo Worker");let picked=pickYahooPrice(d,phase),p=picked.p,pc=picked.pc,t=+d.time;if(!Number.isFinite(p)||p===0||phase==="pre"&&(!Number.isFinite(pc)||pc===0))throw new Error(phase==="pre"?"אין נתון טרום/סגירה רגילה זמין":"Worker no price");if(!freshExtendedTs(t,phase))throw new Error("Yahoo stale / no extended trade");quotes[a.ticker]={c:p,pc:Number.isFinite(pc)&&pc!==0?pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),mode:phase};addHist(a.ticker,p);return"worker"}
+
+async function workerOne(a,phase,sig){
+  let ysym=yahooSymbol(a);
+  let url=YAHOO_WORKER_BASE+`?symbol=${encodeURIComponent(ysym)}&_=${Date.now()}`;
+  let raw=await fetchJson(url,sig,"Yahoo Worker");
+  let picked=normalizeWorkerQuote(raw,a,phase);
+  let p=picked.p, pc=picked.pc, t=picked.t;
+
+  if(!Number.isFinite(p)||p===0||phase==="pre"&&(!Number.isFinite(pc)||pc===0)){
+    throw new Error(phase==="pre"?"אין נתון טרום/סגירה רגילה זמין":"Worker no price");
+  }
+
+  if(phase==="pre"&&!freshExtendedTs(t,phase)){
+    throw new Error("Yahoo stale / no extended trade");
+  }
+
+  quotes[a.ticker]={
+    c:p,
+    pc:Number.isFinite(pc)&&pc!==0?pc:null,
+    t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),
+    src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),
+    mode:phase
+  };
+  addHist(a.ticker,p);
+  return"worker";
+}
+
 async function one(a,k,sig,phase){try{return await workerOne(a,phase,sig)}catch(e){log(a.ticker+": "+e.message+", Yahoo bridge failed");if(phase==="pre")throw e;if(k){log(a.ticker+": fallback to Finnhub");await finnhubOne(a,k,sig);quotes[a.ticker].src=srcLabel("finnhub-last");quotes[a.ticker].mode=phase;return"fallback"}throw e}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 function fetchListForPhase(phase){let list=assets();let max=30,arr=[];if(ticker){let hit=list.find(x=>x.ticker===ticker);if(hit)arr.push(hit)}for(let a of list){if(arr.length>=max)break;if(!arr.some(x=>x.ticker===a.ticker))arr.push(a)}return arr}
