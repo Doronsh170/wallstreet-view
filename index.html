@@ -220,6 +220,12 @@ body.light .dataModes button.active{
 body.light .relStatus{color:#ffffff}
 
 
+body.light #clearDataTopBtn{
+  background:#5b1111 !important;
+  border-color:#7f1d1d !important;
+  color:#ffffff !important;
+}
+
 #preMarketBtn{
   background:#1e293b !important;
   border-color:#334155 !important;
@@ -613,6 +619,7 @@ a.button,
   </div>
   <div class="controls">
     <button id="refreshBtn" class="good">רענן עכשיו</button>
+    <button id="clearDataTopBtn" class="danger">נקה נתונים</button>
     <button id="autoBtn">אוטומטי 30 שניות</button>
     <button id="themeBtn" class="themeBtn">רקע בהיר</button>
     <span id="autoStatus" class="status">אוטומטי כבוי</span>
@@ -641,17 +648,6 @@ a.button,
 
 <section id="peerBox" class="peerPanel card"><div class="peerHead"><h2>קבוצת השוואה</h2><span id="peerCount" class="count"></span></div><div id="peers" class="peers"></div></section>
 
-<details class="card">
-  <summary>עוד / גשר נתונים</summary>
-  <div class="apiRow">
-    <input id="apiKey" class="api" type="password" placeholder="Finnhub API key, אופציונלי לגיבוי"/>
-    <a class="apiLink" target="_blank" rel="noopener" href="https://finnhub.io/">Finnhub לגיבוי</a>
-    <button id="saveKeyBtn">שמור API</button>
-    <button id="clearKeyBtn" class="danger">מחק API</button>
-    <button id="clearDataBtn" class="danger">נקה נתונים</button>
-  </div>
-  <div class="bridgeNote">מקור ברירת המחדל: Yahoo Finance Bridge. מפתח Finnhub הוא אופציונלי לגיבוי בלבד.</div><div id="log" class="log"></div>
-</details>
 
 <section class="legalBox card">
   <strong class="legalTitle">גילוי נאות</strong>
@@ -740,7 +736,7 @@ function renderPeers(){
 
 function renderDecision(){let r=rows(),have=r.some(x=>Number.isFinite(x.c.od)),lead=r[0],lag=[...r].reverse()[0],tar=r.find(x=>x.a.ticker===ticker);document.getElementById("leaderVal").innerHTML=have&&lead?`${lead.a.ticker} · ${relBadge(lead.s)}`:"מחכה";document.getElementById("laggardVal").innerHTML=have&&lag?`${lag.a.ticker} · ${relBadge(lag.s)}`:"מחכה";document.getElementById("targetVal").innerHTML=tar?relBadge(tar.s):"מחכה"}
 function render(){renderHome();renderHero();renderPeers();renderDecision();updateAuto();updateDataModeButtons()}
-function key(){return(document.getElementById("apiKey").value||localStorage.getItem(KEY)||"").trim()}
+function key(){let el=document.getElementById("apiKey");return((el?el.value:"")||localStorage.getItem(KEY)||"").trim()}
 
 
 
@@ -789,20 +785,20 @@ function startAuto(){if(auto)return;auto=setInterval(()=>fetchGroup("auto"),3000
 function stopAuto(){if(auto)clearInterval(auto);auto=null;if(ctrl)try{ctrl.abort()}catch(e){}updateAuto()}
 function toggleAuto(){auto?stopAuto():startAuto()}
 function updateAuto(){document.getElementById("autoStatus").textContent=auto?"אוטומטי פעיל · כל 30 שניות":"אוטומטי כבוי"}
-function saveKey(){let k=document.getElementById("apiKey").value.trim();if(!k){alert("לא הוזן מפתח");return}localStorage.setItem(KEY,k);note("Finnhub נשמר כגיבוי");if(ticker){startAuto();fetchGroup("key")}}
-function clearKey(){localStorage.removeItem(KEY);document.getElementById("apiKey").value="";stopAuto();note("API נמחק")}
+function saveKey(){let el=document.getElementById("apiKey");let k=(el?el.value:"").trim();if(!k){alert("לא הוזן מפתח");return}localStorage.setItem(KEY,k);note("Finnhub נשמר כגיבוי");if(ticker){startAuto();fetchGroup("key")}}
+function clearKey(){localStorage.removeItem(KEY);let el=document.getElementById("apiKey");if(el)el.value="";stopAuto();note("API נמחק")}
 function log(m){let e=document.getElementById("log");if(!e)return;let t=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});e.textContent=`[${t}] ${m}\n`+e.textContent}
 function clearData(){stopAuto();abortFetch();quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);localStorage.removeItem(LTS);lastFetchMs=0;localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;let i=document.getElementById("symbolInput");if(i)i.value="";let last=document.getElementById("lastUpdate");if(last)last.textContent="עדיין לא עודכן";render();note("הנתונים נוקו")}
 function applyTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";document.body.classList.toggle("light",mode==="light");let b=document.getElementById("themeBtn");if(b)b.textContent=mode==="light"?"רקע כהה":"רקע בהיר"}
 function toggleTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";localStorage.setItem("momentum_desk_theme_mode_v20",mode==="light"?"dark":"light");applyTheme()}
-function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("apiKey").value=localStorage.getItem(KEY)||"";document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});
+function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;let apiEl=document.getElementById("apiKey");if(apiEl)apiEl.value=localStorage.getItem(KEY)||"";document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});
 document.addEventListener("click",e=>{
   if(e.target&&e.target.id==="watchToggleBtn"){
     watchOpen=!watchOpen;
     renderPeers();
   }
 });
-document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("saveKeyBtn").onclick=saveKey;document.getElementById("clearKeyBtn").onclick=clearKey;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;render()}
+document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("clearDataTopBtn").onclick=clearData;document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;let saveKeyBtn=document.getElementById("saveKeyBtn");if(saveKeyBtn)saveKeyBtn.onclick=saveKey;let clearKeyBtn=document.getElementById("clearKeyBtn");if(clearKeyBtn)clearKeyBtn.onclick=clearKey;let clearDataBtn=document.getElementById("clearDataBtn");if(clearDataBtn)clearDataBtn.onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;render()}
 init();
 </script>
 </body>
