@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Momentum Desk Desktop</title>
+<title>Momentum Desk Responsive</title>
 <style>
 :root {
   --bg:#07111f; --panel:#0f172a; --panel2:#111c31; --line:#2e405d;
@@ -239,6 +239,360 @@ body.light #preMarketBtn{
 body.light #preMarketBtn.active{
   background:#2563eb !important;
   border-color:#1d4ed8 !important;
+}
+
+
+/* unified responsive layer: keeps one HTML for desktop and mobile */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+main {
+  width: 100%;
+}
+
+.card {
+  overflow: hidden;
+}
+
+.searchWrap,
+.symbol {
+  min-width: 0;
+}
+
+button,
+a.button,
+.apiLink {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.peerRow {
+  min-width: 0;
+}
+
+.peerSym,
+.peerPct {
+  direction: ltr;
+}
+
+.peerName {
+  min-width: 0;
+}
+
+@media (min-width: 981px) {
+  .searchPanel,
+  .selected,
+  .actionBar,
+  .peerPanel,
+  details.card,
+  .legalBox {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 980px) {
+  header {
+    padding: 11px 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .sub {
+    font-size: 12px;
+  }
+
+  main {
+    padding: 10px;
+  }
+
+  .hero {
+    display: block;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .hero h2 {
+    font-size: 24px;
+    line-height: 1.18;
+  }
+
+  .hero p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 14px;
+    gap: 8px;
+  }
+
+  .stat {
+    padding: 12px 6px;
+  }
+
+  .stat strong {
+    font-size: 24px;
+  }
+
+  .stat span {
+    font-size: 11px;
+  }
+
+  .searchPanel {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .searchTop {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .searchLabel {
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .symbol {
+    width: 100%;
+    height: 58px;
+    font-size: 25px;
+    text-align: center;
+  }
+
+  button.primary {
+    width: 100%;
+    height: 54px;
+  }
+
+  .controls,
+  .apiRow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .controls button,
+  .controls a.button,
+  .apiRow button,
+  .apiRow .apiLink {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .status {
+    text-align: center;
+  }
+
+  .suggestions {
+    max-height: 270px;
+  }
+
+  .suggestion {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .sgTheme {
+    display: none;
+  }
+
+  .homeMap {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .categoryCard {
+    min-height: 0;
+    padding: 13px;
+  }
+
+  .categoryCard h3 {
+    font-size: 15px;
+  }
+
+  .selected {
+    margin-bottom: 12px;
+  }
+
+  .selectedGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .selectedCard,
+  .statePanel {
+    padding: 16px;
+  }
+
+  .selectedTicker {
+    font-size: 34px;
+  }
+
+  .selectedName {
+    font-size: 15px;
+  }
+
+  .selectedTheme {
+    font-size: 15px;
+  }
+
+  .tvBtn {
+    width: 100%;
+    height: 48px;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .tab {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .statePanel h2,
+  .peerHead h2 {
+    font-size: 16px;
+  }
+
+  .stateItem {
+    padding: 11px;
+  }
+
+  .actionBar {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .fullBtn {
+    width: 100%;
+    height: 52px;
+  }
+
+  .peerPanel {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .peerHead {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .peers {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .peerRow {
+    grid-template-columns: 74px minmax(0, 1fr) 74px 22px;
+    gap: 8px;
+    padding: 10px 11px;
+    min-height: 52px;
+  }
+
+  .peerSym {
+    font-size: 17px;
+  }
+
+  .peerName {
+    font-size: 12px;
+  }
+
+  .peerPct {
+    font-size: 14px;
+  }
+
+  details.card {
+    padding: 13px;
+  }
+
+  .api {
+    width: 100%;
+    height: 46px;
+  }
+
+  .log {
+    max-height: 120px;
+  }
+
+  .legalBox {
+    padding: 13px;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  h1 {
+    font-size: 18px;
+  }
+
+  .sub {
+    display: none;
+  }
+
+  main {
+    padding: 9px;
+  }
+
+  .hero {
+    padding: 13px;
+  }
+
+  .hero h2 {
+    font-size: 22px;
+  }
+
+  .hero p {
+    font-size: 12px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  .stat strong {
+    font-size: 21px;
+  }
+
+  .stat span {
+    font-size: 10px;
+  }
+
+  .symbol {
+    font-size: 25px;
+  }
+
+  .selectedTicker {
+    font-size: 32px;
+  }
+
+  .peerRow {
+    grid-template-columns: 68px minmax(0, 1fr) 68px 20px;
+    padding: 10px;
+  }
+
+  .peerSym {
+    font-size: 16px;
+  }
+
+  .peerName {
+    max-width: 100%;
+  }
+
+  .count {
+    font-size: 12px;
+  }
 }
 
 </style>
