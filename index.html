@@ -369,6 +369,19 @@ function currentModeText(){
   return dataMode==="pre" ? "טרום מסחר" : "מסחר רגיל";
 }
 
+
+function openWhatsAppText(text){
+  let encoded=encodeURIComponent(text);
+  let isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if(isMobile){
+    window.location.href="whatsapp://send?text="+encoded;
+    return;
+  }
+
+  window.open("https://web.whatsapp.com/send?text="+encoded,"_blank","noopener");
+}
+
 function shareWhatsApp(){
   if(!ticker||!matches(ticker).length){
     note("בחר מניה קודם");
@@ -417,8 +430,7 @@ function shareWhatsApp(){
   ];
 
   let text = parts.join("\n");
-  let url = "https://wa.me/?text=" + encodeURIComponent(text);
-  window.open(url,"_blank","noopener");
+  openWhatsAppText(text);
 }
 
 function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);render();if(false&&key()&&ticker){startAuto();fetchGroup("init")}}
