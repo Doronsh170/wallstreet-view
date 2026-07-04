@@ -348,7 +348,7 @@ function clearData(){abortFetch();quotes={};hist={};localStorage.removeItem(QS);
 function applyTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";document.body.classList.toggle("light",mode==="light");let b=document.getElementById("themeBtn");if(b)b.textContent=mode==="light"?"רקע כהה":"רקע בהיר"}
 function toggleTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";localStorage.setItem("momentum_desk_theme_mode_v20",mode==="light"?"dark":"light");applyTheme()}
 function siteLink(){
-  return "https://wallstreet-view.lovable.app";
+  return "https://doronsh170.github.io/wallstreet-view/";
 }
 
 function pctForWhatsApp(a){
@@ -426,7 +426,7 @@ function shareWhatsApp(){
     lines.join("\n"),
     ``,
     `*אין באמור לעיל ייעוץ השקעות או המלצה לפעולה בני\"ע.*`,
-    `➡️ https://wallstreet-view.lovable.app`
+    `➡️ https://doronsh170.github.io/wallstreet-view/`
   ];
 
   let text = parts.join("\n");
