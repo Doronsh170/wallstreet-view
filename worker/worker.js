@@ -6,7 +6,8 @@
  *
  * נקודות קצה:
  *   GET /?symbol=NVDA              — תאימות לאחור: אובייקט יחיד (שדות זהים לגרסה הקודמת + שדות חדשים)
- *   GET /?symbols=NVDA,AMD,VRT,... — batch: עד 40 סימבולים בבקשה אחת, מחזיר {quotes:{SYM:{...}},errors:{}}
+ *   GET /?symbols=NVDA,AMD,VRT,... — batch: עד 32 סימבולים בבקשה אחת, מחזיר {quotes:{SYM:{...}},errors:{}}
+ *                                    (32 ציטוטים + עד 15 משיכות avgVol = 47 subrequests, מתחת למגבלת 50 של התוכנית החינמית)
  *
  * שדות לכל סימבול:
  *   price, regularMarketPrice, previousClose, preMarketPrice, postMarketPrice,
@@ -133,7 +134,7 @@ export default {
     const single = u.searchParams.get("symbol");
     try {
       if (multi) {
-        const syms = [...new Set(multi.split(",").map(s => s.trim().toUpperCase()).filter(Boolean))].slice(0, 40);
+        const syms = [...new Set(multi.split(",").map(s => s.trim().toUpperCase()).filter(Boolean))].slice(0, 32);
         if (!syms.length) return new Response(JSON.stringify({ error: "empty symbols" }), { status: 400, headers: CORS });
         const budget = { left: 15 };
         const settled = await Promise.allSettled(syms.map(s => quoteOne(s, budget, ctx)));

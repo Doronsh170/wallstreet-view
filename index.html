@@ -164,6 +164,24 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
 .chipUp{background:color-mix(in oklab,var(--good) 15%,transparent);color:var(--good);border-color:color-mix(in oklab,var(--good) 35%,transparent)}
 .chipDown{background:color-mix(in oklab,var(--bad) 15%,transparent);color:var(--bad);border-color:color-mix(in oklab,var(--bad) 35%,transparent)}
 
+/* Market scanner */
+.scanHead{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-bottom:10px}
+.scanHead .lastUpdate{text-align:left;font-size:12px;color:var(--muted)}
+#scanBtn.loading{background:color-mix(in oklab,var(--warn) 18%,var(--surface-2));border-color:var(--warn);color:var(--text)}
+.scanTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.scanTab{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.scanTab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.scanList{display:grid;gap:8px;max-height:460px;overflow-y:auto}
+.scanRow{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;direction:ltr;cursor:pointer;text-align:left}
+.scanRow:hover{border-color:var(--blue)}
+.scanRow .mv{font-weight:800;font-size:14px;min-width:64px;text-align:left}
+.scanRow .main{min-width:0}
+.scanRow .sym{font-weight:800;font-size:15px;letter-spacing:.3px}
+.scanRow .nm{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.scanRow .side{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:150px}
+.scanRow.themeRow{direction:rtl;text-align:right}
+.scanRow.themeRow .mv{text-align:right;direction:ltr}
+
 /* Misc */
 .pos{color:var(--good)}.neg{color:var(--bad)}.wait{color:var(--muted)}
 .notice{display:none;border:1px solid var(--blue);background:color-mix(in oklab,var(--blue) 12%,var(--surface));border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:12px;font-size:13px;font-weight:600}
@@ -225,6 +243,16 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     </div>
   </section>
 
+  <section class="card" id="scannerBox">
+    <h3 class="cardTitle">סורק שוק · מה זז עכשיו</h3>
+    <div class="scanHead">
+      <button id="scanBtn" class="primary">סרוק את כל היקום</button>
+      <span id="scanStatus" class="lastUpdate">טרם נסרק</span>
+    </div>
+    <div id="scanTabs" class="scanTabs"></div>
+    <div id="scanList" class="scanList"><div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div></div>
+  </section>
+
   <section class="card decision">
     <h3 class="cardTitle">מצב עכשיו</h3>
     <div class="row"><span class="label">מובילה בקבוצה</span><span id="leaderVal" class="val wait">מחכה</span></div>
@@ -252,6 +280,7 @@ const DATA={"assets":[{"order":1,"category":"AI & Chips","theme":"AI Infrastruct
 const A=DATA.assets, P=DATA.primary;
 const KEY="momentum_desk_finnhub_key_v20", QS="momentum_desk_quotes_v20", HS="momentum_desk_history_v20", LTS="momentum_desk_last_fetch_v20";
 let quotes=load(QS,{}), hist=load(HS,{}), ticker="", theme=localStorage.getItem("momentum_desk_theme_v20")||"AI Infrastructure", auto=null, busy=false, ctrl=null, runSeq=0, peersOpen=false, peerExpanded=false, lastFetchMs=load(LTS,0), dataMode="regular", batchOk=true, autoNominal=0;
+let scanBusy=false, scanCtrl=null, scanDone=0, scanTotal=0, scanTs=0, scanView="up";
 function load(k,f){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f))}catch(e){return f}}function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function assets(t=theme){return A.filter(x=>x.theme===t)}function matches(t){return A.filter(x=>x.ticker===String(t).toUpperCase())}function primary(t){t=String(t).toUpperCase();return P[t]||(matches(t)[0]?.theme||null)}function q(t){let x=quotes[String(t).toUpperCase()]||null;return x&&x.mode===dataMode?x:null}
 function recentSnapshot(maxAge=25000){return Number.isFinite(lastFetchMs)&&lastFetchMs>0&&(Date.now()-lastFetchMs)<=maxAge&&Object.values(quotes).some(x=>x&&x.mode===dataMode)}
@@ -312,14 +341,88 @@ function renderPeers(){let box=document.getElementById("peerBox"),btn=document.g
 function togglePeerExpand(){peerExpanded=!peerExpanded;renderPeers()}
 function renderDecision(){let r=rows(),have=r.some(x=>Number.isFinite(x.c.od)),lead=r[0],lag=[...r].reverse()[0],tar=r.find(x=>x.a.ticker===ticker);document.getElementById("leaderVal").innerHTML=have&&lead?`${lead.a.ticker} · ${relBadge(lead.s)}`:"מחכה";document.getElementById("laggardVal").innerHTML=have&&lag?`${lag.a.ticker} · ${relBadge(lag.s)}`:"מחכה";document.getElementById("targetVal").innerHTML=tar?relBadge(tar.s):"מחכה"}
 function renderTable(){let e=document.getElementById("rows");if(!e)return;e.innerHTML=rows().map(r=>`<tr><td><a class="tv" target="_blank" href="${tv(r.a.tvSymbol)}">${r.a.ticker}</a><div class="nm">${r.a.name}</div></td><td>${price(r.q?.c)}<div class="nm">${r.q?.src||""}</div></td><td><span class="${moveClass(r.c)} num">${pct(r.c.od)}</span></td><td>${relBadge(r.s)}</td><td><span class="badge ${r.s.cl}">${r.s.text}</span></td></tr>`).join("")}
-function render(){renderHero();renderSelectedHeader();renderPeers();renderDecision();renderTable();updateAuto();updateDataModeButtons()}
+function render(){renderHero();renderSelectedHeader();renderPeers();renderDecision();renderTable();renderScanner();updateAuto();updateDataModeButtons()}
 function key(){return(localStorage.getItem(KEY)||"").trim()}
+
+/* ===== סורק שוק — כל היקום ===== */
+function uniqueAssets(){return [...new Map(A.map(a=>[a.ticker,a])).values()]}
+function stopScan(){if(scanCtrl)try{scanCtrl.abort()}catch(e){}scanBusy=false;scanCtrl=null}
+async function scanUniverse(){
+  if(scanBusy){stopScan();renderScanner();return}
+  if(!batchOk){note("סריקה מלאה דורשת את גרסת ה-Worker החדשה (worker/README.md)");return}
+  let phase=effectivePhase();
+  let list=uniqueAssets();
+  let chunks=[];for(let i=0;i<list.length;i+=30)chunks.push(list.slice(i,i+30));
+  scanBusy=true;scanCtrl=new AbortController();scanDone=0;scanTotal=list.length;
+  let ok=0,fail=0,idx=0,sig=scanCtrl.signal;
+  renderScanner();
+  log(`Scan start phase=${phase} symbols=${list.length} chunks=${chunks.length}`);
+  async function lane(){
+    while(idx<chunks.length&&!sig.aborted){
+      let chunk=chunks[idx++];
+      try{let r=await fetchGroupBatch(chunk,phase,sig);ok+=r.ok;fail+=r.fail}
+      catch(e){if(sig.aborted)return;fail+=chunk.length;let m=String(e.message);if(m.includes("batch not supported")||m.includes("Yahoo Batch HTTP 4")){batchOk=false;throw e}}
+      scanDone+=chunk.length;renderScanner()
+    }
+  }
+  try{
+    await Promise.all([lane(),lane(),lane()]);
+    if(!sig.aborted&&ok>0){save(QS,quotes);save(HS,hist);scanTs=Date.now();log(`Scan done ok=${ok} fail=${fail}`)}
+    else if(!sig.aborted&&!ok){log(`Scan failed fail=${fail}`);note("הסריקה נכשלה — לא התקבלו נתונים")}
+  }catch(e){log("Scan: "+e.message);if(!batchOk)note("הסורק דורש את גרסת ה-Worker החדשה — ראה worker/README.md")}
+  finally{scanBusy=false;scanCtrl=null;renderScanner()}
+}
+function scanRows(){
+  return uniqueAssets().map(a=>{let x=q(a.ticker);if(!x)return null;let od=day(x);if(!Number.isFinite(od))return null;return{a,x,od,rv:rvol(x),gp:gapPct(x)}}).filter(Boolean)
+}
+function scanThemeRows(){
+  let by={};
+  for(let a of A){let x=q(a.ticker),od=day(x);if(!Number.isFinite(od))continue;(by[a.theme]=by[a.theme]||[]).push(od)}
+  return Object.entries(by).map(([t,arr])=>({t,avg:arr.reduce((x,y)=>x+y,0)/arr.length,n:arr.length})).sort((x,y)=>y.avg-x.avg)
+}
+function scanChipsMini(r){
+  let out=[];
+  if(r.rv!=null)out.push(`<span class="chip ${r.rv>=2?"chipHot":r.rv>=1.2?"chipWarm":""}">RVOL ${fmtX(r.rv)}</span>`);
+  if(scanView==="gap"&&r.gp!=null)out.push(`<span class="chip ${r.gp>0?"chipUp":"chipDown"}">גאפ ${pct(r.gp)}</span>`);
+  return out.join("")
+}
+function setScanView(v){scanView=v;renderScanner()}
+function scanPick(t){setTicker(t);let el=document.getElementById("selectedHeader");if(el)el.scrollIntoView({behavior:"smooth",block:"start"})}
+function scanPickTheme(t){let el=document.getElementById("symbolInput");if(el)el.value="";switchTheme(t);note("הוצגה קבוצת "+t)}
+function renderScanner(){
+  let btn=document.getElementById("scanBtn"),st=document.getElementById("scanStatus"),tabsEl=document.getElementById("scanTabs"),listEl=document.getElementById("scanList");
+  if(!btn||!st||!tabsEl||!listEl)return;
+  btn.classList.toggle("loading",scanBusy);
+  btn.textContent=scanBusy?"עצור סריקה":"סרוק את כל היקום";
+  if(scanBusy)st.textContent=`סורק... ${Math.min(scanDone,scanTotal)}/${scanTotal}`;
+  else if(scanTs)st.textContent="נסרק: "+new Date(scanTs).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})+" · "+currentModeText();
+  else st.textContent="טרם נסרק";
+  let rows=scanRows();
+  if(!rows.length){tabsEl.innerHTML="";listEl.innerHTML='<div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div>';return}
+  let hasIntraday=rows.some(r=>r.rv!=null||r.gp!=null);
+  let views=[["up","עולות"],["down","יורדות"]];
+  if(hasIntraday)views.push(["rvol","RVOL"],["gap","גאפים"]);
+  views.push(["themes","קבוצות"]);
+  if(!views.some(v=>v[0]===scanView))scanView="up";
+  tabsEl.innerHTML=views.map(v=>`<button type="button" class="scanTab ${scanView===v[0]?"active":""}" onclick="setScanView('${v[0]}')">${v[1]}</button>`).join("");
+  if(scanView==="themes"){
+    listEl.innerHTML=scanThemeRows().map(r=>`<div class="scanRow themeRow" onclick="scanPickTheme(this.dataset.theme)" data-theme="${escHtml(r.t)}"><span class="mv ${cls(r.avg)}">${pct(r.avg)}</span><div class="main"><div class="sym" style="direction:rtl">${escHtml(r.t)}</div><div class="nm">${r.n} מניות עם נתונים</div></div><div class="side"></div></div>`).join("");
+    return;
+  }
+  let sorted=scanView==="up"?[...rows].sort((x,y)=>y.od-x.od)
+    :scanView==="down"?[...rows].sort((x,y)=>x.od-y.od)
+    :scanView==="rvol"?rows.filter(r=>r.rv!=null).sort((x,y)=>y.rv-x.rv)
+    :rows.filter(r=>r.gp!=null).sort((x,y)=>Math.abs(y.gp)-Math.abs(x.gp));
+  let top=sorted.slice(0,15);
+  if(!top.length){listEl.innerHTML='<div class="emptyHint">אין נתונים לתצוגה זו במצב הנוכחי</div>';return}
+  listEl.innerHTML=top.map(r=>`<div class="scanRow" onclick="scanPick('${r.a.ticker}')"><span class="mv ${cls(r.od)}">${pct(r.od)}</span><div class="main"><div class="sym">${r.a.ticker}</div><div class="nm">${escHtml(r.a.name)} · ${escHtml(r.a.theme)}</div></div><div class="side">${scanChipsMini(r)}</div></div>`).join("")
+}
 
 
 
 function effectivePhase(){return dataMode==="pre"?"pre":"regular"}
 function dataModeLabel(p){if(dataMode==="pre")return "טרום מסחר · מנוטרל שינוי יום קודם";let s=nyPhase();if(s==="regular")return "מסחר פעיל";if(s==="pre")return "טרום מסחר · נתון רגיל אחרון";if(s==="after")return "מסחר מאוחר · נתון רגיל אחרון";return "שוק סגור · נתון מסחר רגיל אחרון"}
-function togglePreMarket(){dataMode=dataMode==="pre"?"regular":"pre";abortFetch();quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);lastFetchMs=0;localStorage.removeItem(LTS);updatePreMarketButton();render();setTimeout(()=>fetchGroup("pre-toggle"),50)}
+function togglePreMarket(){dataMode=dataMode==="pre"?"regular":"pre";abortFetch();stopScan();scanTs=0;quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);lastFetchMs=0;localStorage.removeItem(LTS);updatePreMarketButton();render();setTimeout(()=>fetchGroup("pre-toggle"),50)}
 function setDataMode(p){dataMode=p==="pre"?"pre":"regular";updatePreMarketButton();render();setTimeout(()=>fetchGroup("mode"),50)}
 function updateDataModeButtons(){updatePreMarketButton()}
 function updatePreMarketButton(){let b=document.getElementById("preMarketBtn");if(b){b.classList.toggle("active",dataMode==="pre");b.textContent=dataMode==="pre"?"כבה טרום מסחר":"הפעל טרום מסחר"}let mb=document.getElementById("modeBadge"),mt=document.getElementById("modeBadgeText");if(mb&&mt){mb.classList.toggle("pre",dataMode==="pre");mt.textContent=dataMode==="pre"?"טרום מסחר":"מסחר רגיל"}}
@@ -372,7 +475,7 @@ function saveKey(){let k=document.getElementById("apiKey").value.trim();if(!k){a
 function clearKey(){localStorage.removeItem(KEY);document.getElementById("apiKey").value="";stopAuto();note("API נמחק")}
 function log(m){let e=document.getElementById("log");if(!e)return;let t=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});e.textContent=`[${t}] ${m}\n`+e.textContent}
 function copyTV(){navigator.clipboard.writeText(assets().map(a=>a.tvSymbol).join(",")).then(()=>note("הועתק ל־TradingView"))}
-function clearData(){abortFetch();quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);localStorage.removeItem(LTS);localStorage.removeItem("momentum_desk_ticker_v20");lastFetchMs=0;ticker="";peersOpen=false;peerExpanded=false;let inp=document.getElementById("symbolInput");if(inp)inp.value="";closeSuggestions();let last=document.getElementById("lastUpdate");if(last)last.textContent="הנתונים נוקו";render();note("הנתונים נוקו")}
+function clearData(){abortFetch();stopScan();scanTs=0;quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);localStorage.removeItem(LTS);localStorage.removeItem("momentum_desk_ticker_v20");lastFetchMs=0;ticker="";peersOpen=false;peerExpanded=false;let inp=document.getElementById("symbolInput");if(inp)inp.value="";closeSuggestions();let last=document.getElementById("lastUpdate");if(last)last.textContent="הנתונים נוקו";render();note("הנתונים נוקו")}
 
 function applyTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";document.body.classList.toggle("light",mode==="light");let b=document.getElementById("themeBtn");if(b)b.textContent=mode==="light"?"רקע כהה":"רקע בהיר"}
 function toggleTheme(){let mode=localStorage.getItem("momentum_desk_theme_mode_v20")||"dark";localStorage.setItem("momentum_desk_theme_mode_v20",mode==="light"?"dark":"light");applyTheme()}
@@ -462,6 +565,6 @@ function shareWhatsApp(){
   openWhatsAppText(text);
 }
 
-function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);render();if(false&&key()&&ticker){startAuto();fetchGroup("init")}}
+function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;document.getElementById("scanBtn").onclick=scanUniverse;setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);render();if(false&&key()&&ticker){startAuto();fetchGroup("init")}}
 init();
 </script></body></html>
