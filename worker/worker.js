@@ -104,6 +104,16 @@ async function quoteOne(sym, budget, ctx) {
     }
   }
 
+  /* ווליום טרום מסחר — סכום הנרות שלפני פתיחת הסשן הרגיל של היום */
+  let preVolume = null;
+  if (Number.isFinite(regStart)) {
+    let sum = 0, seen = false;
+    for (let i = 0; i < ts.length; i++) {
+      if (ts[i] < regStart && Number.isFinite(q.volume?.[i]) && q.volume[i] > 0) { sum += q.volume[i]; seen = true; }
+    }
+    if (seen) preVolume = sum;
+  }
+
   const fin = x => (Number.isFinite(x) && x > 0 ? x : null);
   const regular = fin(meta.regularMarketPrice);
   const prev = fin(meta.previousClose) ?? fin(meta.chartPreviousClose);
@@ -121,6 +131,7 @@ async function quoteOne(sym, budget, ctx) {
     dayHigh: fin(meta.regularMarketDayHigh),
     dayLow: fin(meta.regularMarketDayLow),
     volume: Number.isFinite(meta.regularMarketVolume) && meta.regularMarketVolume >= 0 ? meta.regularMarketVolume : null,
+    preVolume,
     avgVol10d: av,
     marketState: state
   };
