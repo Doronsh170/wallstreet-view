@@ -452,6 +452,8 @@ function renderScanner(){
   if(scanBusy)st.textContent=`סורק... ${Math.min(scanDone,scanTotal)}/${scanTotal}`;
   else if(scanTs)st.textContent="נסרק: "+new Date(scanTs).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})+" · "+currentModeText();
   else st.textContent="טרם נסרק";
+  /* מציגים דירוג רק אחרי סריקה אמיתית של כל היקום — אחרת נתוני הקבוצה הפעילה משתקפים כאן ככפילות של קבוצת ההשוואה */
+  if(!scanBusy&&!scanTs){tabsEl.innerHTML="";listEl.innerHTML='<div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div>';return}
   let rows=scanRows();
   if(!rows.length){tabsEl.innerHTML="";listEl.innerHTML='<div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div>';return}
   let hasIntraday=rows.some(r=>r.rv!=null||r.gp!=null);
