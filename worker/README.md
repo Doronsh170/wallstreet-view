@@ -16,6 +16,16 @@
 
 אין צורך בהגדרות נוספות (KV, משתני סביבה וכו') — הקאש של נפח ממוצע משתמש ב-Cache API המובנה.
 
+## סוד FINNHUB_KEY — יומן דוחות בלי מפתח בדפדפן (מומלץ)
+
+כדי שסימון הדוחות יעבוד לכל המשתמשים בלי להזין מפתח באתר:
+
+1. ב-Cloudflare Dashboard → ה-Worker → **Settings** → **Variables and Secrets**.
+2. **Add** → Type: **Secret** → Name: `FINNHUB_KEY` → Value: המפתח מ-finnhub.io → Save (ואז Deploy אם נדרש).
+3. בדיקה: `https://momentum-yahoo-prices.sh6doron.workers.dev/?earnings=1` צריך להחזיר JSON עם `earningsCalendar`.
+
+ה-Worker שומר את היומן בקאש ל-6 שעות, כך שכל המשתמשים יחד צורכים קריאת Finnhub אחת בכל רענון קאש. חשוב: אל תשים את המפתח כ-Secret ב-GitHub — לאתר סטטי ב-GitHub Pages אין צד שרת, וכל מפתח שמוזרק ל-HTML גלוי לכל מבקר.
+
 ## בדיקה אחרי פריסה
 
 ```
