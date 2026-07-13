@@ -77,9 +77,21 @@ async function avgVol10d(sym, budget, ctx) {
   return av;
 }
 
+/* בשעות מסחר מורחבות משתמשים בנרות של דקה — רק שם יאהו מדווח ווליום לנרות טרום/אחרי */
+function nyMinutesNow() {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+  const m = Object.fromEntries(p.map(x => [x.type, x.value]));
+  return (+m.hour) * 60 + (+m.minute);
+}
+function extendedHoursNow() {
+  const min = nyMinutesNow();
+  return (min >= 240 && min < 570) || (min >= 960 && min < 1200);
+}
+
 async function quoteOne(sym, budget, ctx) {
+  const interval = extendedHoursNow() ? "1m" : "2m";
   const [res, av] = await Promise.all([
-    chart(sym, "range=1d&interval=2m&includePrePost=true"),
+    chart(sym, "range=1d&interval=" + interval + "&includePrePost=true"),
     avgVol10d(sym, budget, ctx).catch(() => null)
   ]);
   const meta = res.meta || {};
