@@ -88,7 +88,9 @@ function extendedHoursNow() {
   return (min >= 240 && min < 570) || (min >= 960 && min < 1200);
 }
 
-async function quoteOne(sym, budget, ctx) {
+const WORKER_VERSION = 3;
+
+async function quoteOne(sym, budget, ctx, debug) {
   const interval = extendedHoursNow() ? "1m" : "2m";
   const [res, av] = await Promise.all([
     chart(sym, "range=1d&interval=" + interval + "&includePrePost=true"),
@@ -130,7 +132,17 @@ async function quoteOne(sym, budget, ctx) {
   const regular = fin(meta.regularMarketPrice);
   const prev = fin(meta.previousClose) ?? fin(meta.chartPreviousClose);
 
+  let dbg;
+  if (debug) {
+    const preBars = ts.filter(t => Number.isFinite(regStart) && t < regStart).length;
+    let preWithVol = 0;
+    for (let i = 0; i < ts.length; i++) if (ts[i] < regStart && Number.isFinite(q.volume?.[i]) && q.volume[i] > 0) preWithVol++;
+    dbg = { interval, bars: ts.length, preBars, preBarsWithVol: preWithVol, regStart, nowNYMin: nyMinutesNow(), extendedNow: extendedHoursNow() };
+  }
+
   return {
+    v: WORKER_VERSION,
+    ...(dbg ? { _debug: dbg } : {}),
     symbol: sym,
     price: regular ?? extPrice,
     regularMarketPrice: regular,
@@ -166,10 +178,10 @@ export default {
           if (r.status === "fulfilled") quotes[syms[i]] = r.value;
           else errors[syms[i]] = String(r.reason?.message || r.reason);
         });
-        return new Response(JSON.stringify({ quotes, errors, time: Math.floor(Date.now() / 1000) }), { headers: CORS });
+        return new Response(JSON.stringify({ v: WORKER_VERSION, quotes, errors, time: Math.floor(Date.now() / 1000) }), { headers: CORS });
       }
       if (single) {
-        const d = await quoteOne(single.trim().toUpperCase(), { left: 2 }, ctx);
+        const d = await quoteOne(single.trim().toUpperCase(), { left: 2 }, ctx, u.searchParams.get("debug") === "1");
         return new Response(JSON.stringify(d), { headers: CORS });
       }
       return new Response(JSON.stringify({ error: "missing symbol/symbols param" }), { status: 400, headers: CORS });
