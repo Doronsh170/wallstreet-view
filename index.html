@@ -324,9 +324,17 @@ function gapPct(x){return x&&x.mode==="regular"&&Number.isFinite(x.o)&&Number.is
 function hodDist(x){return x&&x.mode==="regular"&&Number.isFinite(x.c)&&Number.isFinite(x.h)&&x.h?((x.c/x.h)-1)*100:null}
 function lodDist(x){return x&&x.mode==="regular"&&Number.isFinite(x.c)&&Number.isFinite(x.l)&&x.l?((x.c/x.l)-1)*100:null}
 function fmtX(n){return Number.isFinite(n)?(n>=10?n.toFixed(0):n.toFixed(1))+"×":""}
+function fmtVol(n){return n>=1e9?(n/1e9).toFixed(1)+"B":n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(0)+"K":String(Math.round(n))}
 function statChips(x,t){
   let out=[];
   if(t){let ec=earnChip(t);if(ec)out.push(ec)}
+  /* בטרום/אחרי מסחר (במצב נתונים רגיל) — גאפ מתגבש מול הסגירה האחרונה + ווליום טרום */
+  let ph=nyPhase();
+  if(x&&x.mode==="regular"&&(ph==="pre"||ph==="after")&&Number.isFinite(x.xp)&&Number.isFinite(x.c)&&x.c){
+    let xg=((x.xp/x.c)-1)*100;
+    if(Math.abs(xg)>=0.05)out.push(`<span class="chip chipRtl ${xg>0?"chipUp":"chipDown"}">${ph==="pre"?"גאפ טרום":"מאוחר"} ${pct(xg)}</span>`);
+  }
+  if(x&&ph==="pre"&&Number.isFinite(x.pv)&&x.pv>0)out.push(`<span class="chip chipRtl">ווליום טרום ${fmtVol(x.pv)}</span>`);
   let r=rvol(x);if(r!=null)out.push(`<span class="chip ${r>=2?"chipHot":r>=1.2?"chipWarm":""}">RVOL ${fmtX(r)}</span>`);
   let g=gapPct(x);if(g!=null&&Math.abs(g)>=0.05)out.push(`<span class="chip ${g>0?"chipUp":"chipDown"}">גאפ ${pct(g)}</span>`);
   let hd=hodDist(x);if(hd!=null)out.push(hd>=-0.15?`<span class="chip chipHot">ליד HOD</span>`:`<span class="chip">HOD ${hd.toFixed(1)}%</span>`);
@@ -517,7 +525,7 @@ function pickYahooPrice(d,phase){
   return{p,pc}
 }
 
-function applyQuote(a,d,phase){let picked=pickYahooPrice(d,phase),p=picked.p,pc=picked.pc,t=+d.time;if(!Number.isFinite(p)||p===0||phase==="pre"&&(!Number.isFinite(pc)||pc===0))throw new Error(phase==="pre"?"אין נתון טרום/סגירה רגילה זמין":"Worker no price");if(!freshExtendedTs(t,phase))throw new Error("Yahoo stale / no extended trade at "+nyStamp(t));let num=(x)=>Number.isFinite(+x)&&+x>0?+x:null;quotes[a.ticker]={c:p,pc:Number.isFinite(pc)&&pc!==0?pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),mode:phase,o:num(d.open),h:num(d.dayHigh),l:num(d.dayLow),v:num(d.volume),av:num(d.avgVol10d)};if(phase==="pre"&&Number.isFinite(p)&&Number.isFinite(pc)&&pc)quotes[a.ticker].extendedPct=((p/pc)-1)*100;addHist(a.ticker,p)}
+function applyQuote(a,d,phase){let picked=pickYahooPrice(d,phase),p=picked.p,pc=picked.pc,t=+d.time;if(!Number.isFinite(p)||p===0||phase==="pre"&&(!Number.isFinite(pc)||pc===0))throw new Error(phase==="pre"?"אין נתון טרום/סגירה רגילה זמין":"Worker no price");if(!freshExtendedTs(t,phase))throw new Error("Yahoo stale / no extended trade at "+nyStamp(t));let num=(x)=>Number.isFinite(+x)&&+x>0?+x:null;quotes[a.ticker]={c:p,pc:Number.isFinite(pc)&&pc!==0?pc:null,t:Number.isFinite(t)?t:Math.floor(Date.now()/1000),src:srcLabel(phase==="pre"?"worker-pre":phase==="after"?"worker-after":phase==="regular"?"worker-regular":"worker-closed"),mode:phase,o:num(d.open),h:num(d.dayHigh),l:num(d.dayLow),v:num(d.volume),av:num(d.avgVol10d),xp:num(d.preMarketPrice)||num(d.postMarketPrice),pv:num(d.preVolume)};if(phase==="pre"&&Number.isFinite(p)&&Number.isFinite(pc)&&pc)quotes[a.ticker].extendedPct=((p/pc)-1)*100;addHist(a.ticker,p)}
 async function workerOne(a,phase,sig){let ysym=yahooSymbol(a);let url=YAHOO_WORKER_BASE+`?symbol=${encodeURIComponent(ysym)}&_=${Date.now()}`;let d=await fetchJson(url,sig,"Yahoo Worker");applyQuote(a,d,phase);return"worker"}
 async function fetchGroupBatch(list,phase,sig){let pairs=list.map(a=>[yahooSymbol(a),a]);let url=YAHOO_WORKER_BASE+`?symbols=${encodeURIComponent(pairs.map(x=>x[0]).join(","))}&_=${Date.now()}`;let d=await fetchJson(url,sig,"Yahoo Batch",15000);if(!d||typeof d!=="object"||!d.quotes)throw new Error("batch not supported");let ok=0,fail=0;for(let [ysym,a] of pairs){let raw=d.quotes[ysym];if(!raw){fail++;if(d.errors&&d.errors[ysym])log(a.ticker+": "+d.errors[ysym]);continue}try{applyQuote(a,raw,phase);ok++}catch(e){fail++;log(a.ticker+": "+e.message)}}if(!ok)throw new Error("batch empty");return{ok,fail}}
 async function one(a,k,sig,phase){try{return await workerOne(a,phase,sig)}catch(e){log(a.ticker+": "+e.message+", Yahoo bridge failed");if(phase==="pre")throw e;if(k){log(a.ticker+": fallback to Finnhub");await finnhubOne(a,k,sig,phase);quotes[a.ticker].src=srcLabel("finnhub-last");return"fallback"}throw e}}
