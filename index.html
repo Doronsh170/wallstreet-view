@@ -122,16 +122,6 @@ button[disabled]{opacity:.55;cursor:default}
 .waBtn svg{display:block}
 .stock .waShare{gap:8px;margin-top:8px;background:#25D366;border-color:#25D366;color:#0b1f12;border:none;cursor:pointer;font-size:15px}
 .stock .waShare:hover{background:#1fbd5a}
-
-/* עוד / גשר נתונים — Finnhub גיבוי */
-details.card{padding:14px 16px}
-details.card summary{font-weight:800;cursor:pointer;font-size:13.5px;color:var(--text)}
-.apiRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.apiRow button{cursor:pointer}
-.api{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 12px;direction:ltr;text-align:left;flex:1;min-width:180px}
-.apiLink{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--blue);text-decoration:none;font-weight:700;padding:0 12px;height:40px;font-size:12.5px}
-.bridgeNote{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
-.log{white-space:pre-wrap;direction:ltr;text-align:left;max-height:110px;overflow:auto;font-size:11.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:10px;color:var(--muted)}
 .peer{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
 .peer.target{border-color:var(--blue);background:color-mix(in oklab,var(--blue) 10%,var(--surface-2))}
 .peer a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px;min-height:60px;text-decoration:none;color:inherit;direction:ltr}
@@ -193,6 +183,13 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
 .scanRow .side{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:150px}
 .scanRow.themeRow{direction:rtl;text-align:right}
 .scanRow.themeRow .mv{text-align:right;direction:ltr}
+
+/* Settings / API key */
+.keyRow{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+.keyRow input{direction:ltr;border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:var(--radius-sm);padding:12px;min-height:48px;font-size:13px;outline:none;min-width:0}
+.keyRow input:focus{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in oklab,var(--blue) 25%,transparent)}
+.keyHint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.chipRtl{direction:rtl}
 
 /* Misc */
 .pos{color:var(--good)}.neg{color:var(--bad)}.wait{color:var(--muted)}
@@ -281,17 +278,15 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     <div id="peers" class="peers"></div>
   </section>
 
-  <details class="card" id="advancedBox">
-    <summary>עוד / גשר נתונים · Finnhub גיבוי</summary>
-    <div class="apiRow">
-      <input id="apiKey" class="api" type="password" placeholder="Finnhub API key, אופציונלי לגיבוי"/>
-      <a class="apiLink" target="_blank" rel="noopener" href="https://finnhub.io/">Finnhub לגיבוי</a>
-      <button id="saveKeyBtn">שמור API</button>
-      <button id="clearKeyBtn">מחק API</button>
+  <section class="card" id="settingsBox">
+    <h3 class="cardTitle">Finnhub · דוחות וגיבוי נתונים</h3>
+    <div class="keyRow">
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="הדבק מפתח Finnhub (חינמי)"/>
+      <button id="saveKeyBtn" class="primary">שמור</button>
+      <button id="clearKeyBtn">מחק</button>
     </div>
-    <div class="bridgeNote">מקור ברירת המחדל: Yahoo Worker. מפתח Finnhub הוא גיבוי אופציונלי בלבד ונשמר בדפדפן שלך.</div>
-    <div id="log" class="log"></div>
-  </details>
+    <div class="keyHint">מפתח חינמי מ־finnhub.io מפעיל סימון דוחות קרובים ליד מניות, ומשמש גיבוי לנתוני מחיר כשגשר Yahoo לא זמין.</div>
+  </section>
 
   <div class="legal">
     <strong>גילוי נאות</strong>
@@ -305,6 +300,8 @@ const A=DATA.assets, P=DATA.primary;
 const KEY="momentum_desk_finnhub_key_v20", QS="momentum_desk_quotes_v20", HS="momentum_desk_history_v20", LTS="momentum_desk_last_fetch_v20";
 let quotes=load(QS,{}), hist=load(HS,{}), ticker="", theme=localStorage.getItem("momentum_desk_theme_v20")||"AI Infrastructure", auto=null, busy=false, ctrl=null, runSeq=0, peersOpen=false, peerExpanded=false, lastFetchMs=load(LTS,0), dataMode="regular", batchOk=true, autoNominal=0;
 let scanBusy=false, scanCtrl=null, scanDone=0, scanTotal=0, scanTs=0, scanView="up";
+const ERS="momentum_desk_earnings_v20";
+let earnings=load(ERS,null);
 function load(k,f){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f))}catch(e){return f}}function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function assets(t=theme){return A.filter(x=>x.theme===t)}function matches(t){return A.filter(x=>x.ticker===String(t).toUpperCase())}function primary(t){t=String(t).toUpperCase();return P[t]||(matches(t)[0]?.theme||null)}function q(t){let x=quotes[String(t).toUpperCase()]||null;return x&&x.mode===dataMode?x:null}
 function recentSnapshot(maxAge=25000){return Number.isFinite(lastFetchMs)&&lastFetchMs>0&&(Date.now()-lastFetchMs)<=maxAge&&Object.values(quotes).some(x=>x&&x.mode===dataMode)}
@@ -327,8 +324,9 @@ function gapPct(x){return x&&x.mode==="regular"&&Number.isFinite(x.o)&&Number.is
 function hodDist(x){return x&&x.mode==="regular"&&Number.isFinite(x.c)&&Number.isFinite(x.h)&&x.h?((x.c/x.h)-1)*100:null}
 function lodDist(x){return x&&x.mode==="regular"&&Number.isFinite(x.c)&&Number.isFinite(x.l)&&x.l?((x.c/x.l)-1)*100:null}
 function fmtX(n){return Number.isFinite(n)?(n>=10?n.toFixed(0):n.toFixed(1))+"×":""}
-function statChips(x){
+function statChips(x,t){
   let out=[];
+  if(t){let ec=earnChip(t);if(ec)out.push(ec)}
   let r=rvol(x);if(r!=null)out.push(`<span class="chip ${r>=2?"chipHot":r>=1.2?"chipWarm":""}">RVOL ${fmtX(r)}</span>`);
   let g=gapPct(x);if(g!=null&&Math.abs(g)>=0.05)out.push(`<span class="chip ${g>0?"chipUp":"chipDown"}">גאפ ${pct(g)}</span>`);
   let hd=hodDist(x);if(hd!=null)out.push(hd>=-0.15?`<span class="chip chipHot">ליד HOD</span>`:`<span class="chip">HOD ${hd.toFixed(1)}%</span>`);
@@ -358,15 +356,46 @@ function chooseSuggestion(t){let input=document.getElementById("symbolInput"),bo
 function closeSuggestions(){let box=document.getElementById("suggestions");if(box)box.classList.remove("show")}
 function find(){closeSuggestions();let t=document.getElementById("symbolInput").value.trim().toUpperCase();if(!t){note("הקלד סימבול");return}abortFetch();peersOpen=false;peerExpanded=false;ticker=t;localStorage.setItem("momentum_desk_ticker_v20",t);let p=primary(t);if(!p){render();note(t+" לא נמצא ביקום");return}theme=p;localStorage.setItem("momentum_desk_theme_v20",theme);render();if(recentSnapshot()&&q(ticker)){startAuto()}else{setTimeout(()=>fetchGroup("symbol"),50);startAuto()}}
 function dashboardHtml(){let unique=[...new Map(A.map(a=>[a.ticker,a])).values()];let themes=[...new Set(A.map(a=>a.theme))];let cats=[...new Set(A.map(a=>a.category))];return `<div class="proShell"><div class="proCard"><div class="proTitle">Momentum Desk</div><p class="proText">דשבורד עבודה לסיווג מניות וול סטריט לפי סקטור, תת־סקטור וקבוצת השוואה. המטרה היא להגיע מהר להקשר הנכון של כל מניה, בלי לפתוח רשימות מפוזרות.</p><div class="proKpis"><div class="proKpi"><div class="proNum">${unique.length}</div><div class="proLabel">מניות</div></div><div class="proKpi"><div class="proNum">${themes.length}</div><div class="proLabel">קבוצות השוואה</div></div><div class="proKpi"><div class="proNum">${cats.length}</div><div class="proLabel">קטגוריות</div></div></div></div></div>`}function renderHero(){let e=document.getElementById("hero");e.innerHTML=dashboardHtml()}
-function renderSelectedHeader(){let box=document.getElementById("selectedHeader"),m=matches(ticker);if(!box)return;if(!ticker||!m.length){box.classList.remove("show");box.innerHTML="";return}let a=m.find(x=>x.theme===theme)||m[0];let tabs=m.length>1?'<div class="tabs">'+m.map(x=>`<button class="tab ${x.theme===theme?'active':''}" data-theme="${escHtml(x.theme)}" onclick="switchTheme(this.dataset.theme)">${escHtml(x.theme)}</button>`).join("")+"</div>":"";box.innerHTML=`<div class="ticker">${ticker}</div><div class="company">${a.name}</div><div class="theme">${theme}</div><div class="meta">קבוצת ההשוואה הרלוונטית</div>${statChips(q(ticker))}<a class="tvBtn" target="_blank" rel="noopener" href="${tv(a.tvSymbol)}">פתח גרף ב־TradingView</a><button class="tvBtn waShare" type="button" onclick="shareWhatsApp()"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M19.11 17.21c-.27-.13-1.58-.78-1.82-.87-.24-.09-.42-.13-.6.13-.18.27-.69.87-.85 1.05-.16.18-.31.2-.58.07-.27-.13-1.13-.42-2.15-1.33-.79-.71-1.33-1.58-1.48-1.85-.16-.27-.02-.41.12-.55.12-.12.27-.31.4-.47.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.6-1.44-.83-1.97-.22-.52-.44-.45-.6-.46-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.11 2.81.13.18 1.92 2.93 4.65 4.11.65.28 1.16.45 1.56.58.65.21 1.25.18 1.72.11.52-.08 1.58-.65 1.81-1.27.22-.62.22-1.15.16-1.27-.07-.12-.25-.18-.52-.31zM12.04 2.4C6.84 2.4 2.6 6.64 2.6 11.84c0 1.84.51 3.6 1.47 5.16L2.4 21.6l4.74-1.65c1.5.82 3.19 1.26 4.9 1.26 5.2 0 9.44-4.24 9.44-9.44 0-2.52-.98-4.88-2.76-6.66-1.78-1.78-4.16-2.71-6.68-2.71zm0 17.28c-1.52 0-3.02-.41-4.32-1.18l-.31-.18-2.81.98.94-2.74-.2-.32c-.85-1.36-1.3-2.93-1.3-4.55 0-4.44 3.62-8.06 8.06-8.06 2.15 0 4.18.84 5.7 2.36 1.52 1.52 2.36 3.55 2.36 5.71 0 4.44-3.62 8.06-8.06 8.06z"/></svg>שלח בוואטסאפ</button>${tabs}`;box.classList.add("show")}
+function renderSelectedHeader(){let box=document.getElementById("selectedHeader"),m=matches(ticker);if(!box)return;if(!ticker||!m.length){box.classList.remove("show");box.innerHTML="";return}let a=m.find(x=>x.theme===theme)||m[0];let tabs=m.length>1?'<div class="tabs">'+m.map(x=>`<button class="tab ${x.theme===theme?'active':''}" data-theme="${escHtml(x.theme)}" onclick="switchTheme(this.dataset.theme)">${escHtml(x.theme)}</button>`).join("")+"</div>":"";box.innerHTML=`<div class="ticker">${ticker}</div><div class="company">${a.name}</div><div class="theme">${theme}</div><div class="meta">קבוצת ההשוואה הרלוונטית</div>${statChips(q(ticker),ticker)}<a class="tvBtn" target="_blank" rel="noopener" href="${tv(a.tvSymbol)}">פתח גרף ב־TradingView</a><button class="tvBtn waShare" type="button" onclick="shareWhatsApp()"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M19.11 17.21c-.27-.13-1.58-.78-1.82-.87-.24-.09-.42-.13-.6.13-.18.27-.69.87-.85 1.05-.16.18-.31.2-.58.07-.27-.13-1.13-.42-2.15-1.33-.79-.71-1.33-1.58-1.48-1.85-.16-.27-.02-.41.12-.55.12-.12.27-.31.4-.47.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.6-1.44-.83-1.97-.22-.52-.44-.45-.6-.46-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.11 2.81.13.18 1.92 2.93 4.65 4.11.65.28 1.16.45 1.56.58.65.21 1.25.18 1.72.11.52-.08 1.58-.65 1.81-1.27.22-.62.22-1.15.16-1.27-.07-.12-.25-.18-.52-.31zM12.04 2.4C6.84 2.4 2.6 6.64 2.6 11.84c0 1.84.51 3.6 1.47 5.16L2.4 21.6l4.74-1.65c1.5.82 3.19 1.26 4.9 1.26 5.2 0 9.44-4.24 9.44-9.44 0-2.52-.98-4.88-2.76-6.66-1.78-1.78-4.16-2.71-6.68-2.71zm0 17.28c-1.52 0-3.02-.41-4.32-1.18l-.31-.18-2.81.98.94-2.74-.2-.32c-.85-1.36-1.3-2.93-1.3-4.55 0-4.44 3.62-8.06 8.06-8.06 2.15 0 4.18.84 5.7 2.36 1.52 1.52 2.36 3.55 2.36 5.71 0 4.44-3.62 8.06-8.06 8.06z"/></svg>שלח בוואטסאפ</button>${tabs}`;box.classList.add("show")}
 function togglePeers(){if(!ticker){note("בחר מניה קודם");return}if(!matches(ticker).length){note(ticker+" לא נמצא ביקום");return}peersOpen=!peersOpen;peerExpanded=false;renderPeers()}
 function visiblePeers(){let all=assets();if(peerExpanded)return all;let core=all.filter(a=>a.tier!=="watchlist");let base=(core.length?core:all).slice(0,8);let sel=all.find(a=>a.ticker===ticker);if(sel&&!base.some(a=>a.ticker===ticker))base=base.concat([sel]);return base}
-function renderPeers(){let box=document.getElementById("peerBox"),btn=document.getElementById("togglePeersBtn"),cnt=document.getElementById("peerCount"),el=document.getElementById("peers");if(!box||!btn||!cnt||!el)return;if(!ticker||!matches(ticker).length){box.classList.add("hidden");btn.disabled=true;btn.textContent="בחר מניה כדי לפתוח קבוצת השוואה";cnt.textContent="";el.innerHTML="";return}btn.disabled=false;btn.textContent=peersOpen?"סגור את קבוצת ההשוואה":"פתח עד 8 מניות ליבה בקבוצה";if(!peersOpen){box.classList.add("hidden");cnt.textContent="";el.innerHTML="";return}let all=assets();let vis=visiblePeers();box.classList.remove("hidden");cnt.textContent="מציג "+vis.length+" מתוך "+all.length+" מניות";let extra=all.length-vis.length;let expandBtn=(all.length>vis.length||peerExpanded)?`<div class="peerExpandWrap" style="grid-column:1/-1;margin-top:8px"><button type="button" class="primary" onclick="togglePeerExpand()">${peerExpanded?"הצג פחות מניות":"פתח את שאר הקבוצה ("+extra+")"}</button></div>`:"";el.innerHTML=vis.map(a=>{let c=calc(a),d=c.od;return `<div class="peer ${a.ticker===ticker?'target':''}"><a target="_blank" rel="noopener" href="${tv(a.tvSymbol)}" aria-label="פתח ${a.ticker} ב-TradingView"><div class="peerMove ${moveClass(c)}">${pct(d)}</div><div class="peerMain"><div class="sym">${a.ticker}</div><div class="nm">${a.name}</div>${statChips(q(a.ticker))}</div></a></div>`}).join("")+expandBtn}
+function renderPeers(){let box=document.getElementById("peerBox"),btn=document.getElementById("togglePeersBtn"),cnt=document.getElementById("peerCount"),el=document.getElementById("peers");if(!box||!btn||!cnt||!el)return;if(!ticker||!matches(ticker).length){box.classList.add("hidden");btn.disabled=true;btn.textContent="בחר מניה כדי לפתוח קבוצת השוואה";cnt.textContent="";el.innerHTML="";return}btn.disabled=false;btn.textContent=peersOpen?"סגור את קבוצת ההשוואה":"פתח עד 8 מניות ליבה בקבוצה";if(!peersOpen){box.classList.add("hidden");cnt.textContent="";el.innerHTML="";return}let all=assets();let vis=visiblePeers();box.classList.remove("hidden");cnt.textContent="מציג "+vis.length+" מתוך "+all.length+" מניות";let extra=all.length-vis.length;let expandBtn=(all.length>vis.length||peerExpanded)?`<div class="peerExpandWrap" style="grid-column:1/-1;margin-top:8px"><button type="button" class="primary" onclick="togglePeerExpand()">${peerExpanded?"הצג פחות מניות":"פתח את שאר הקבוצה ("+extra+")"}</button></div>`:"";el.innerHTML=vis.map(a=>{let c=calc(a),d=c.od;return `<div class="peer ${a.ticker===ticker?'target':''}"><a target="_blank" rel="noopener" href="${tv(a.tvSymbol)}" aria-label="פתח ${a.ticker} ב-TradingView"><div class="peerMove ${moveClass(c)}">${pct(d)}</div><div class="peerMain"><div class="sym">${a.ticker}</div><div class="nm">${a.name}</div>${statChips(q(a.ticker),a.ticker)}</div></a></div>`}).join("")+expandBtn}
 function togglePeerExpand(){peerExpanded=!peerExpanded;renderPeers()}
 function renderDecision(){let r=rows(),have=r.some(x=>Number.isFinite(x.c.od)),lead=r[0],lag=[...r].reverse()[0],tar=r.find(x=>x.a.ticker===ticker);document.getElementById("leaderVal").innerHTML=have&&lead?`${lead.a.ticker} · ${relBadge(lead.s)}`:"מחכה";document.getElementById("laggardVal").innerHTML=have&&lag?`${lag.a.ticker} · ${relBadge(lag.s)}`:"מחכה";document.getElementById("targetVal").innerHTML=tar?relBadge(tar.s):"מחכה"}
 function renderTable(){let e=document.getElementById("rows");if(!e)return;e.innerHTML=rows().map(r=>`<tr><td><a class="tv" target="_blank" href="${tv(r.a.tvSymbol)}">${r.a.ticker}</a><div class="nm">${r.a.name}</div></td><td>${price(r.q?.c)}<div class="nm">${r.q?.src||""}</div></td><td><span class="${moveClass(r.c)} num">${pct(r.c.od)}</span></td><td>${relBadge(r.s)}</td><td><span class="badge ${r.s.cl}">${r.s.text}</span></td></tr>`).join("")}
 function render(){renderHero();renderSelectedHeader();renderPeers();renderDecision();renderTable();renderScanner();updateAuto();updateDataModeButtons()}
 function key(){return(localStorage.getItem(KEY)||"").trim()}
+
+/* ===== יומן דוחות (Finnhub) ===== */
+function nyDayKey(d=new Date()){let p=nyFullParts(d);return `${p.y}-${String(p.mo).padStart(2,"0")}-${String(p.d).padStart(2,"0")}`}
+async function maybeFetchEarnings(force=false){
+  let k=key();if(!k)return;
+  let today=nyDayKey();
+  if(!force&&earnings&&earnings.day===today&&earnings.map&&!earnings.failTs)return;
+  if(!force&&earnings&&earnings.failTs&&Date.now()-earnings.failTs<3600000)return;
+  try{
+    let to=nyDayKey(new Date(Date.now()+7*86400000));
+    let d=await fetchJson(`https://finnhub.io/api/v1/calendar/earnings?from=${today}&to=${to}&token=${encodeURIComponent(k)}`,undefined,"Finnhub Earnings",9000);
+    let uni=new Set(uniqueAssets().map(a=>a.ticker));
+    let map={};
+    for(let e of (d.earningsCalendar||[])){let t=String(e.symbol||"").toUpperCase();if(!uni.has(t)||!e.date)continue;let cur=map[t];if(!cur||e.date<cur.d)map[t]={d:e.date,h:e.hour||""}}
+    earnings={day:today,map};save(ERS,earnings);
+    log(`יומן דוחות נטען: ${Object.keys(map).length} מניות מהיקום מדווחות בשבוע הקרוב`);
+    render();
+  }catch(e){
+    log("יומן דוחות: "+e.message);
+    earnings={day:today,map:(earnings&&earnings.map)||{},failTs:Date.now()};save(ERS,earnings);
+  }
+}
+function earnChip(t){
+  if(!earnings||!earnings.map)return"";
+  let e=earnings.map[String(t).toUpperCase()];if(!e)return"";
+  let today=nyDayKey(),tomorrow=nyDayKey(new Date(Date.now()+86400000));
+  let hourTxt=e.h==="bmo"?" · לפני פתיחה":e.h==="amc"?" · אחרי נעילה":e.h==="dmh"?" · במהלך המסחר":"";
+  if(e.d===today)return `<span class="chip chipRtl chipDown">דוחות היום${hourTxt}</span>`;
+  if(e.d===tomorrow)return `<span class="chip chipRtl chipHot">דוחות מחר${hourTxt}</span>`;
+  return `<span class="chip chipRtl">דוחות ${e.d.slice(8,10)}.${e.d.slice(5,7)}</span>`;
+}
 
 /* ===== סורק שוק — כל היקום ===== */
 function uniqueAssets(){return [...new Map(A.map(a=>[a.ticker,a])).values()]}
@@ -406,6 +435,7 @@ function scanThemeRows(){
 }
 function scanChipsMini(r){
   let out=[];
+  let ec=earnChip(r.a.ticker);if(ec)out.push(ec);
   if(r.rv!=null)out.push(`<span class="chip ${r.rv>=2?"chipHot":r.rv>=1.2?"chipWarm":""}">RVOL ${fmtX(r.rv)}</span>`);
   if(scanView==="gap"&&r.gp!=null)out.push(`<span class="chip ${r.gp>0?"chipUp":"chipDown"}">גאפ ${pct(r.gp)}</span>`);
   return out.join("")
@@ -491,13 +521,13 @@ async function fetchGroupBatch(list,phase,sig){let pairs=list.map(a=>[yahooSymbo
 async function one(a,k,sig,phase){try{return await workerOne(a,phase,sig)}catch(e){log(a.ticker+": "+e.message+", Yahoo bridge failed");if(phase==="pre")throw e;if(k){log(a.ticker+": fallback to Finnhub");await finnhubOne(a,k,sig,phase);quotes[a.ticker].src=srcLabel("finnhub-last");return"fallback"}throw e}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 function fetchListForPhase(phase){let list=assets();let max=30,arr=[];/* כל קבוצת השוואה צומצמה עד 30 מניות כדי שכל הקבוצה תוכל להתעדכן */if(ticker){let hit=list.find(x=>x.ticker===ticker);if(hit)arr.push(hit)}for(let a of list){if(arr.length>=max)break;if(!arr.some(x=>x.ticker===a.ticker))arr.push(a)}return arr}
-async function fetchGroup(src="auto"){if(busy){if(src==="auto")return;abortFetch();await sleep(80)}let k=key();let phase=effectivePhase();busy=true;ctrl=new AbortController();let myRun=++runSeq;let fetchTheme=theme;let b=document.getElementById("refreshBtn");b.disabled=true;b.classList.add("loading");b.textContent="מרענן";let ok=0,fail=0,list=fetchListForPhase(phase);log(`Start phase=${phase} group=${fetchTheme} symbols=${list.length} mode=${batchOk?"batch":"single"}`);try{let batchDone=false;if(batchOk){try{let r=await fetchGroupBatch(list,phase,ctrl.signal);if(myRun!==runSeq)return;ok=r.ok;fail=r.fail;batchDone=true;render()}catch(e){if(myRun!==runSeq||String(e.message).includes("AbortError")||String(e.message).includes("aborted"))return;batchOk=false;log("Batch לא זמין ("+e.message+") — עובר למשיכה בודדת")}}if(!batchDone){for(let a of list){if(myRun!==runSeq)return;try{await one(a,k,ctrl.signal,phase);ok++;if(myRun!==runSeq)return;render();await sleep(phase==="regular"?120:220)}catch(e){if(String(e.message).includes("AbortError")||String(e.message).includes("aborted"))return;fail++;log(a.ticker+": "+e.message);if(String(e.message).includes("429"))break}}}if(myRun!==runSeq)return;save(QS,quotes);save(HS,hist);lastFetchMs=Date.now();save(LTS,lastFetchMs);let tm=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});let label=dataModeLabel(phase);document.getElementById("lastUpdate").textContent="עודכן: "+tm+" · "+label+" · "+fetchTheme;log(`Done phase=${phase} group=${fetchTheme} ok=${ok} fail=${fail}`);if(auto&&autoNominal!==autoMs())startAuto();if(phase!=="regular"&&assets().length>30)note("מחוץ לשעות המסחר עודכנו עד 30 מניות בקבוצה כדי לא להיחסם") }finally{if(myRun===runSeq){busy=false;ctrl=null;b.disabled=false;b.classList.remove("loading");b.textContent="רענן עכשיו";render()}}}
+async function fetchGroup(src="auto"){if(busy){if(src==="auto")return;abortFetch();await sleep(80)}let k=key();maybeFetchEarnings();let phase=effectivePhase();busy=true;ctrl=new AbortController();let myRun=++runSeq;let fetchTheme=theme;let b=document.getElementById("refreshBtn");b.disabled=true;b.classList.add("loading");b.textContent="מרענן";let ok=0,fail=0,list=fetchListForPhase(phase);log(`Start phase=${phase} group=${fetchTheme} symbols=${list.length} mode=${batchOk?"batch":"single"}`);try{let batchDone=false;if(batchOk){try{let r=await fetchGroupBatch(list,phase,ctrl.signal);if(myRun!==runSeq)return;ok=r.ok;fail=r.fail;batchDone=true;render()}catch(e){if(myRun!==runSeq||String(e.message).includes("AbortError")||String(e.message).includes("aborted"))return;batchOk=false;log("Batch לא זמין ("+e.message+") — עובר למשיכה בודדת")}}if(!batchDone){for(let a of list){if(myRun!==runSeq)return;try{await one(a,k,ctrl.signal,phase);ok++;if(myRun!==runSeq)return;render();await sleep(phase==="regular"?120:220)}catch(e){if(String(e.message).includes("AbortError")||String(e.message).includes("aborted"))return;fail++;log(a.ticker+": "+e.message);if(String(e.message).includes("429"))break}}}if(myRun!==runSeq)return;save(QS,quotes);save(HS,hist);lastFetchMs=Date.now();save(LTS,lastFetchMs);let tm=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});let label=dataModeLabel(phase);document.getElementById("lastUpdate").textContent="עודכן: "+tm+" · "+label+" · "+fetchTheme;log(`Done phase=${phase} group=${fetchTheme} ok=${ok} fail=${fail}`);if(auto&&autoNominal!==autoMs())startAuto();if(phase!=="regular"&&assets().length>30)note("מחוץ לשעות המסחר עודכנו עד 30 מניות בקבוצה כדי לא להיחסם") }finally{if(myRun===runSeq){busy=false;ctrl=null;b.disabled=false;b.classList.remove("loading");b.textContent="רענן עכשיו";render()}}}
 function autoMs(){return batchOk?10000:30000}
 function startAuto(){if(auto&&autoNominal===autoMs())return;if(auto)clearInterval(auto);autoNominal=autoMs();auto=setInterval(()=>fetchGroup("auto"),autoNominal);updateAuto()}
 function stopAuto(){if(auto)clearInterval(auto);auto=null;autoNominal=0;if(ctrl)try{ctrl.abort()}catch(e){}updateAuto()}
 function toggleAuto(){auto?stopAuto():startAuto()}function updateAuto(){document.getElementById("autoStatus").textContent=auto?"אוטומטי פעיל · כל "+(autoNominal/1000)+" שניות":"אוטומטי כבוי"}
-function saveKey(){let k=document.getElementById("apiKey").value.trim();if(!k){alert("לא הוזן מפתח");return}localStorage.setItem(KEY,k);note("Finnhub נשמר כגיבוי");if(ticker){startAuto();fetchGroup("key")}}
-function clearKey(){localStorage.removeItem(KEY);document.getElementById("apiKey").value="";stopAuto();note("API נמחק")}
+function saveKey(){let k=document.getElementById("apiKey").value.trim();if(!k){note("לא הוזן מפתח");return}localStorage.setItem(KEY,k);note("מפתח Finnhub נשמר");maybeFetchEarnings(true);if(ticker){startAuto();fetchGroup("key")}}
+function clearKey(){localStorage.removeItem(KEY);document.getElementById("apiKey").value="";earnings=null;localStorage.removeItem(ERS);note("מפתח Finnhub נמחק");render()}
 function log(m){let e=document.getElementById("log");if(!e)return;let t=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});e.textContent=`[${t}] ${m}\n`+e.textContent}
 function copyTV(){navigator.clipboard.writeText(assets().map(a=>a.tvSymbol).join(",")).then(()=>note("הועתק ל־TradingView"))}
 function clearData(){abortFetch();stopScan();scanTs=0;quotes={};hist={};localStorage.removeItem(QS);localStorage.removeItem(HS);localStorage.removeItem(LTS);localStorage.removeItem("momentum_desk_ticker_v20");lastFetchMs=0;ticker="";peersOpen=false;peerExpanded=false;let inp=document.getElementById("symbolInput");if(inp)inp.value="";closeSuggestions();let last=document.getElementById("lastUpdate");if(last)last.textContent="הנתונים נוקו";render();note("הנתונים נוקו")}
@@ -590,6 +620,6 @@ function shareWhatsApp(){
   openWhatsAppText(text);
 }
 
-function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;document.getElementById("scanBtn").onclick=scanUniverse;let sk=document.getElementById("saveKeyBtn");if(sk)sk.onclick=saveKey;let ck=document.getElementById("clearKeyBtn");if(ck)ck.onclick=clearKey;let ak=document.getElementById("apiKey");if(ak&&key())ak.placeholder="Finnhub שמור ✓ — הזן מפתח חדש להחלפה";setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);render();if(false&&key()&&ticker){startAuto();fetchGroup("init")}}
+function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode="regular";applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("autoBtn").onclick=toggleAuto;document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("togglePeersBtn").onclick=togglePeers;document.getElementById("scanBtn").onclick=scanUniverse;document.getElementById("saveKeyBtn").onclick=saveKey;document.getElementById("clearKeyBtn").onclick=clearKey;let ki=document.getElementById("apiKey");if(ki)ki.value=key();maybeFetchEarnings();setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);render();if(false&&key()&&ticker){startAuto();fetchGroup("init")}}
 init();
 </script></body></html>
