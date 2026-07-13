@@ -285,7 +285,7 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
       <button id="saveKeyBtn" class="primary">שמור</button>
       <button id="clearKeyBtn">מחק</button>
     </div>
-    <div class="keyHint">מפתח חינמי מ־finnhub.io מפעיל סימון דוחות קרובים ליד מניות, ומשמש גיבוי לנתוני מחיר כשגשר Yahoo לא זמין.</div>
+    <div class="keyHint">אם הוגדר הסוד FINNHUB_KEY ב־Cloudflare Worker — סימון הדוחות עובד אוטומטית ואין צורך במפתח כאן. השדה הזה משמש גיבוי: מפתח חינמי מ־finnhub.io שמופעל מקומית בדפדפן, וגם משמש גיבוי לנתוני מחיר כשגשר Yahoo לא זמין.</div>
   </section>
 
   <div class="legal">
@@ -377,23 +377,35 @@ function key(){return(localStorage.getItem(KEY)||"").trim()}
 /* ===== יומן דוחות (Finnhub) ===== */
 function nyDayKey(d=new Date()){let p=nyFullParts(d);return `${p.y}-${String(p.mo).padStart(2,"0")}-${String(p.d).padStart(2,"0")}`}
 async function maybeFetchEarnings(force=false){
-  let k=key();if(!k)return;
   let today=nyDayKey();
   if(!force&&earnings&&earnings.day===today&&earnings.map&&!earnings.failTs)return;
   if(!force&&earnings&&earnings.failTs&&Date.now()-earnings.failTs<3600000)return;
+  let d=null,src="";
+  /* מסלול ראשי: ה-Worker עם סוד FINNHUB_KEY בצד השרת — לא דורש מפתח בדפדפן */
   try{
-    let to=nyDayKey(new Date(Date.now()+7*86400000));
-    let d=await fetchJson(`https://finnhub.io/api/v1/calendar/earnings?from=${today}&to=${to}&token=${encodeURIComponent(k)}`,undefined,"Finnhub Earnings",9000);
-    let uni=new Set(uniqueAssets().map(a=>a.ticker));
-    let map={};
-    for(let e of (d.earningsCalendar||[])){let t=String(e.symbol||"").toUpperCase();if(!uni.has(t)||!e.date)continue;let cur=map[t];if(!cur||e.date<cur.d)map[t]={d:e.date,h:e.hour||""}}
-    earnings={day:today,map};save(ERS,earnings);
-    log(`יומן דוחות נטען: ${Object.keys(map).length} מניות מהיקום מדווחות בשבוע הקרוב`);
-    render();
-  }catch(e){
-    log("יומן דוחות: "+e.message);
-    earnings={day:today,map:(earnings&&earnings.map)||{},failTs:Date.now()};save(ERS,earnings);
+    let w=await fetchJson(YAHOO_WORKER_BASE+"?earnings=1&_="+Date.now(),undefined,"Worker Earnings",9000);
+    if(w&&Array.isArray(w.earningsCalendar)){d=w;src="worker"}
+  }catch(e){}
+  /* גיבוי: מפתח מקומי מהדפדפן ישירות מול Finnhub */
+  if(!d){
+    let k=key();
+    if(!k){earnings={day:today,map:(earnings&&earnings.map)||{},failTs:Date.now()};save(ERS,earnings);return}
+    try{
+      let to=nyDayKey(new Date(Date.now()+7*86400000));
+      d=await fetchJson(`https://finnhub.io/api/v1/calendar/earnings?from=${today}&to=${to}&token=${encodeURIComponent(k)}`,undefined,"Finnhub Earnings",9000);
+      src="local-key";
+    }catch(e){
+      log("יומן דוחות: "+e.message);
+      earnings={day:today,map:(earnings&&earnings.map)||{},failTs:Date.now()};save(ERS,earnings);
+      return;
+    }
   }
+  let uni=new Set(uniqueAssets().map(a=>a.ticker));
+  let map={};
+  for(let e of (d.earningsCalendar||[])){let t=String(e.symbol||"").toUpperCase();if(!uni.has(t)||!e.date)continue;let cur=map[t];if(!cur||e.date<cur.d)map[t]={d:e.date,h:e.hour||""}}
+  earnings={day:today,map};save(ERS,earnings);
+  log(`יומן דוחות נטען (${src}): ${Object.keys(map).length} מניות מהיקום מדווחות בשבוע הקרוב`);
+  render();
 }
 function earnChip(t){
   if(!earnings||!earnings.map)return"";

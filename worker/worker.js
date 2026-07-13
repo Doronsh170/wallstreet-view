@@ -88,7 +88,32 @@ function extendedHoursNow() {
   return (min >= 240 && min < 570) || (min >= 960 && min < 1200);
 }
 
-const WORKER_VERSION = 3;
+const WORKER_VERSION = 4;
+
+function nyDayStr(d = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
+/* יומן דוחות Finnhub — המפתח נשמר כסוד (FINNHUB_KEY) ב-Worker, לא בדפדפן.
+   נשמר בקאש ל-6 שעות, כך שכל המשתמשים יחד צורכים קריאת Finnhub בודדת. */
+async function earningsCalendar(env, ctx) {
+  const key = env.FINNHUB_KEY;
+  if (!key) throw new Error("FINNHUB_KEY not configured");
+  const today = nyDayStr();
+  const cache = caches.default;
+  const cacheKey = new Request("https://momentum-cache.invalid/earnings/" + today);
+  const hit = await cache.match(cacheKey);
+  if (hit) { try { return await hit.json(); } catch (e) {} }
+  const to = nyDayStr(new Date(Date.now() + 7 * 86400000));
+  const r = await fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${today}&to=${to}&token=${encodeURIComponent(key)}`);
+  if (!r.ok) throw new Error("finnhub HTTP " + r.status);
+  const j = await r.json();
+  const slim = { earningsCalendar: (j.earningsCalendar || []).map(e => ({ symbol: e.symbol, date: e.date, hour: e.hour || "" })) };
+  const body = JSON.stringify(slim);
+  const put = cache.put(cacheKey, new Response(body, { headers: { "Cache-Control": "max-age=21600" } }));
+  if (ctx?.waitUntil) ctx.waitUntil(put); else await put;
+  return slim;
+}
 
 async function quoteOne(sym, budget, ctx, debug) {
   const interval = extendedHoursNow() ? "1m" : "2m";
@@ -168,6 +193,10 @@ export default {
     const multi = u.searchParams.get("symbols");
     const single = u.searchParams.get("symbol");
     try {
+      if (u.searchParams.get("earnings") === "1") {
+        const d = await earningsCalendar(env, ctx);
+        return new Response(JSON.stringify({ v: WORKER_VERSION, ...d }), { headers: CORS });
+      }
       if (multi) {
         const syms = [...new Set(multi.split(",").map(s => s.trim().toUpperCase()).filter(Boolean))].slice(0, 32);
         if (!syms.length) return new Response(JSON.stringify({ error: "empty symbols" }), { status: 400, headers: CORS });
