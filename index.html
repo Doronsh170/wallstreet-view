@@ -246,6 +246,15 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     <div class="row"><span class="label">המניה מול הקבוצה</span><span id="targetVal" class="val wait">מחכה</span></div>
   </section>
 
+  <section class="card" id="peerToggleBox">
+    <button id="togglePeersBtn" class="primary">פתח את כל המניות בקבוצה</button>
+  </section>
+
+  <section class="card hidden" id="peerBox">
+    <div class="peerHead"><h2>קבוצת השוואה</h2><span id="peerCount" class="count"></span><button id="waShareBtn" class="waBtn" type="button" onclick="shareWhatsApp()" aria-label="שלח בוואטסאפ"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19.11 17.21c-.27-.13-1.58-.78-1.82-.87-.24-.09-.42-.13-.6.13-.18.27-.69.87-.85 1.05-.16.18-.31.2-.58.07-.27-.13-1.13-.42-2.15-1.33-.79-.71-1.33-1.58-1.48-1.85-.16-.27-.02-.41.12-.55.12-.12.27-.31.4-.47.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.6-1.44-.83-1.97-.22-.52-.44-.45-.6-.46-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.11 2.81.13.18 1.92 2.93 4.65 4.11.65.28 1.16.45 1.56.58.65.21 1.25.18 1.72.11.52-.08 1.58-.65 1.81-1.27.22-.62.22-1.15.16-1.27-.07-.12-.25-.18-.52-.31zM12.04 2.4C6.84 2.4 2.6 6.64 2.6 11.84c0 1.84.51 3.6 1.47 5.16L2.4 21.6l4.74-1.65c1.5.82 3.19 1.26 4.9 1.26 5.2 0 9.44-4.24 9.44-9.44 0-2.52-.98-4.88-2.76-6.66-1.78-1.78-4.16-2.71-6.68-2.71zm0 17.28c-1.52 0-3.02-.41-4.32-1.18l-.31-.18-2.81.98.94-2.74-.2-.32c-.85-1.36-1.3-2.93-1.3-4.55 0-4.44 3.62-8.06 8.06-8.06 2.15 0 4.18.84 5.7 2.36 1.52 1.52 2.36 3.55 2.36 5.71 0 4.44-3.62 8.06-8.06 8.06z"/></svg><span>שלח בוואטסאפ</span></button></div>
+    <div id="peers" class="peers"></div>
+  </section>
+
   <section class="card" id="scannerBox">
     <h3 class="cardTitle">סורק שוק · מה זז עכשיו</h3>
     <div class="scanHead">
@@ -254,15 +263,6 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     </div>
     <div id="scanTabs" class="scanTabs"></div>
     <div id="scanList" class="scanList"><div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div></div>
-  </section>
-
-  <section class="card" id="peerToggleBox">
-    <button id="togglePeersBtn" class="primary">פתח את כל המניות בקבוצה</button>
-  </section>
-
-  <section class="card hidden" id="peerBox">
-    <div class="peerHead"><h2>קבוצת השוואה</h2><span id="peerCount" class="count"></span><button id="waShareBtn" class="waBtn" type="button" onclick="shareWhatsApp()" aria-label="שלח בוואטסאפ"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19.11 17.21c-.27-.13-1.58-.78-1.82-.87-.24-.09-.42-.13-.6.13-.18.27-.69.87-.85 1.05-.16.18-.31.2-.58.07-.27-.13-1.13-.42-2.15-1.33-.79-.71-1.33-1.58-1.48-1.85-.16-.27-.02-.41.12-.55.12-.12.27-.31.4-.47.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.6-1.44-.83-1.97-.22-.52-.44-.45-.6-.46-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.11 2.81.13.18 1.92 2.93 4.65 4.11.65.28 1.16.45 1.56.58.65.21 1.25.18 1.72.11.52-.08 1.58-.65 1.81-1.27.22-.62.22-1.15.16-1.27-.07-.12-.25-.18-.52-.31zM12.04 2.4C6.84 2.4 2.6 6.64 2.6 11.84c0 1.84.51 3.6 1.47 5.16L2.4 21.6l4.74-1.65c1.5.82 3.19 1.26 4.9 1.26 5.2 0 9.44-4.24 9.44-9.44 0-2.52-.98-4.88-2.76-6.66-1.78-1.78-4.16-2.71-6.68-2.71zm0 17.28c-1.52 0-3.02-.41-4.32-1.18l-.31-.18-2.81.98.94-2.74-.2-.32c-.85-1.36-1.3-2.93-1.3-4.55 0-4.44 3.62-8.06 8.06-8.06 2.15 0 4.18.84 5.7 2.36 1.52 1.52 2.36 3.55 2.36 5.71 0 4.44-3.62 8.06-8.06 8.06z"/></svg><span>שלח בוואטסאפ</span></button></div>
-    <div id="peers" class="peers"></div>
   </section>
 
   <section class="card">
