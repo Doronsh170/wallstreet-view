@@ -36,6 +36,13 @@ header .brand{text-align:center;margin:0 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
 .cardTitle{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 10px;letter-spacing:.4px;text-transform:uppercase}
 
+/* Collapsible cards */
+.collapseHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.collapseHead .cardTitle{margin:0}
+.collapseBtn{min-height:34px;padding:6px 14px;font-size:12px;font-weight:800}
+.card.collapsible.collapsed>.collapseHead{margin-bottom:0}
+.card.collapsible.collapsed>*:not(.collapseHead){display:none}
+
 /* Search */
 .searchRow{display:grid;grid-template-columns:1fr auto;gap:8px;position:relative}
 .searchWrap{position:relative}
@@ -239,8 +246,11 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
   <section id="hero" class="hidden"></section>
   <div id="notice" class="notice"></div>
 
-  <section class="card decision">
-    <h3 class="cardTitle">מצב עכשיו</h3>
+  <section class="card decision collapsible collapsed" id="decisionCard">
+    <div class="collapseHead">
+      <h3 class="cardTitle">מצב עכשיו</h3>
+      <button type="button" class="collapseBtn subtle" onclick="toggleCard('decisionCard',this)" aria-expanded="false" aria-controls="decisionCard">פתח</button>
+    </div>
     <div class="row"><span class="label">מובילה בקבוצה</span><span id="leaderVal" class="val wait">מחכה</span></div>
     <div class="row"><span class="label">חלשה יחסית</span><span id="laggardVal" class="val wait">מחכה</span></div>
     <div class="row"><span class="label">המניה מול הקבוצה</span><span id="targetVal" class="val wait">מחכה</span></div>
@@ -255,8 +265,11 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     <div id="peers" class="peers"></div>
   </section>
 
-  <section class="card" id="scannerBox">
-    <h3 class="cardTitle">סורק שוק · מה זז עכשיו</h3>
+  <section class="card collapsible collapsed" id="scannerBox">
+    <div class="collapseHead">
+      <h3 class="cardTitle">סורק שוק · מה זז עכשיו</h3>
+      <button type="button" class="collapseBtn subtle" onclick="toggleCard('scannerBox',this)" aria-expanded="false" aria-controls="scannerBox">פתח</button>
+    </div>
     <div class="scanHead">
       <button id="scanBtn" class="primary">סרוק את כל היקום</button>
       <span id="scanStatus" class="lastUpdate">טרם נסרק</span>
@@ -265,8 +278,11 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
     <div id="scanList" class="scanList"><div class="emptyHint">סריקה מדרגת את כל המניות ביקום לפי תנועה יומית, RVOL וגאפים</div></div>
   </section>
 
-  <section class="card">
-    <h3 class="cardTitle">פעולות</h3>
+  <section class="card collapsible collapsed" id="actionsCard">
+    <div class="collapseHead">
+      <h3 class="cardTitle">פעולות</h3>
+      <button type="button" class="collapseBtn subtle" onclick="toggleCard('actionsCard',this)" aria-expanded="false" aria-controls="actionsCard">פתח</button>
+    </div>
     <div class="actions">
       <a id="fundamentalBtn" class="btn subtle" target="_blank" rel="noopener" href="https://fundamental-pro.netlify.app/">תמונת מצב פנדמנטלית</a>
       <button id="refreshBtn" class="primary">רענן עכשיו</button>
@@ -368,6 +384,7 @@ function closeSuggestions(){let box=document.getElementById("suggestions");if(bo
 function find(){closeSuggestions();let t=document.getElementById("symbolInput").value.trim().toUpperCase();if(!t){note("הקלד סימבול");return}abortFetch();peersOpen=false;peerExpanded=false;ticker=t;localStorage.setItem("momentum_desk_ticker_v20",t);let p=primary(t);if(!p){render();note(t+" לא נמצא ביקום");return}theme=p;localStorage.setItem("momentum_desk_theme_v20",theme);render();if(recentSnapshot()&&q(ticker)){startAuto()}else{setTimeout(()=>fetchGroup("symbol"),50);startAuto()}}
 function dashboardHtml(){let unique=[...new Map(A.map(a=>[a.ticker,a])).values()];let themes=[...new Set(A.map(a=>a.theme))];let cats=[...new Set(A.map(a=>a.category))];return `<div class="proShell"><div class="proCard"><div class="proTitle">Momentum Desk</div><p class="proText">דשבורד עבודה לסיווג מניות וול סטריט לפי סקטור, תת־סקטור וקבוצת השוואה. המטרה היא להגיע מהר להקשר הנכון של כל מניה, בלי לפתוח רשימות מפוזרות.</p><div class="proKpis"><div class="proKpi"><div class="proNum">${unique.length}</div><div class="proLabel">מניות</div></div><div class="proKpi"><div class="proNum">${themes.length}</div><div class="proLabel">קבוצות השוואה</div></div><div class="proKpi"><div class="proNum">${cats.length}</div><div class="proLabel">קטגוריות</div></div></div></div></div>`}function renderHero(){let e=document.getElementById("hero");e.innerHTML=dashboardHtml()}
 function renderSelectedHeader(){let box=document.getElementById("selectedHeader"),m=matches(ticker);if(!box)return;if(!ticker||!m.length){box.classList.remove("show");box.innerHTML="";return}let a=m.find(x=>x.theme===theme)||m[0];let tabs=m.length>1?'<div class="tabs">'+m.map(x=>`<button class="tab ${x.theme===theme?'active':''}" data-theme="${escHtml(x.theme)}" onclick="switchTheme(this.dataset.theme)">${escHtml(x.theme)}</button>`).join("")+"</div>":"";box.innerHTML=`<div class="ticker">${ticker}</div><div class="company">${a.name}</div><div class="theme">${theme}</div><div class="meta">קבוצת ההשוואה הרלוונטית</div>${statChips(q(ticker),ticker)}${tabs}`;box.classList.add("show")}
+function toggleCard(id,btn){let c=document.getElementById(id);if(!c)return;let closed=c.classList.toggle("collapsed");btn.textContent=closed?"פתח":"סגור";btn.setAttribute("aria-expanded",closed?"false":"true")}
 function togglePeers(){if(!ticker){note("בחר מניה קודם");return}if(!matches(ticker).length){note(ticker+" לא נמצא ביקום");return}peersOpen=!peersOpen;peerExpanded=false;renderPeers()}
 function visiblePeers(){let all=assets();if(peerExpanded)return all;let core=all.filter(a=>a.tier!=="watchlist");let base=(core.length?core:all).slice(0,8);let sel=all.find(a=>a.ticker===ticker);if(sel&&!base.some(a=>a.ticker===ticker))base=base.concat([sel]);return base}
 function renderPeers(){let box=document.getElementById("peerBox"),btn=document.getElementById("togglePeersBtn"),cnt=document.getElementById("peerCount"),el=document.getElementById("peers");if(!box||!btn||!cnt||!el)return;if(!ticker||!matches(ticker).length){box.classList.add("hidden");btn.disabled=true;btn.textContent="בחר מניה כדי לפתוח קבוצת השוואה";cnt.textContent="";el.innerHTML="";return}btn.disabled=false;btn.textContent=peersOpen?"סגור את קבוצת ההשוואה":"פתח עד 8 מניות ליבה בקבוצה";if(!peersOpen){box.classList.add("hidden");cnt.textContent="";el.innerHTML="";return}let all=assets();let vis=visiblePeers();box.classList.remove("hidden");cnt.textContent="מציג "+vis.length+" מתוך "+all.length+" מניות";let extra=all.length-vis.length;let expandBtn=(all.length>vis.length||peerExpanded)?`<div class="peerExpandWrap" style="grid-column:1/-1;margin-top:8px"><button type="button" class="primary" onclick="togglePeerExpand()">${peerExpanded?"הצג פחות מניות":"פתח את שאר הקבוצה ("+extra+")"}</button></div>`:"";el.innerHTML=vis.map(a=>{let c=calc(a),d=c.od;return `<div class="peer ${a.ticker===ticker?'target':''}"><a target="_blank" rel="noopener" href="${tv(a.tvSymbol)}" aria-label="פתח ${a.ticker} ב-TradingView"><div class="peerMove ${moveClass(c)}">${pct(d)}</div><div class="peerMain"><div class="sym">${a.ticker}</div><div class="nm">${a.name}</div>${statChips(q(a.ticker),a.ticker)}</div></a></div>`}).join("")+expandBtn}
