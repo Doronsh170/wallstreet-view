@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Trade Command Center | מערכת החלטה למסחר ממונף</title>
+<style>
+:root{
+  --bg:#eef2f7;--surface:#ffffff;--surface2:#f7f9fc;--ink:#172033;--muted:#667085;
+  --line:#d9e1ec;--primary:#193c75;--primary2:#2f66b3;--primarySoft:#eaf2ff;
+  --good:#087443;--goodBg:#eafaf1;--warn:#9a6700;--warnBg:#fff8df;
+  --bad:#b42318;--badBg:#fff0ee;--info:#175cd3;--infoBg:#eef4ff;
+  --shadow:0 12px 34px rgba(23,32,51,.09);--radius:18px
+}
+[data-theme="dark"]{
+  --bg:#0f1624;--surface:#172033;--surface2:#111a2a;--ink:#edf2f9;--muted:#aab5c5;
+  --line:#2b3950;--primary:#77a7ef;--primary2:#94baf3;--primarySoft:#1b2d49;
+  --good:#61d69a;--goodBg:#123328;--warn:#ffd166;--warnBg:#3a3115;
+  --bad:#ff8d85;--badBg:#3c1f22;--info:#8eb9ff;--infoBg:#182c4c;
+  --shadow:0 14px 38px rgba(0,0,0,.28)
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;line-height:1.45}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.topbar{
+  position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 94%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line)
+}
+.topbar-inner{max-width:1440px;margin:auto;padding:10px 18px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:900}
+.brand b{font-size:16px}.brand small{display:block;color:var(--muted)}
+.actions{display:flex;gap:8px;align-items:center}
+.icon-btn,.btn{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:9px 12px;font-weight:700}
+.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn.soft{background:var(--primarySoft);color:var(--primary);border-color:transparent}
+.btn.good{background:var(--good);color:#fff;border-color:var(--good)}
+.btn.danger{background:var(--badBg);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 28%,var(--line))}
+.btn.small,.icon-btn{padding:7px 9px;font-size:13px}
+.hero{background:linear-gradient(135deg,#10254a,#234f91);color:#fff}
+.hero-inner{max-width:1440px;margin:auto;padding:28px 18px 24px}
+.hero-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:center}
+.hero h1{margin:0 0 7px;font-size:clamp(27px,4vw,46px);line-height:1.08}
+.hero p{margin:0;max-width:840px;color:#dce8fa}
+.status-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.status-chip{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:11px}
+.status-chip span{font-size:12px;color:#d8e4f6}.status-chip b{display:block;font-size:20px;margin-top:2px}
+.shell{max-width:1440px;margin:18px auto 44px;padding:0 16px}
+.tabs{display:flex;gap:8px;overflow:auto;padding:4px 0 14px;scrollbar-width:thin}
+.tab{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:10px 15px;font-weight:800}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.card{grid-column:span 12;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:17px}
+.span-8{grid-column:span 8}.span-7{grid-column:span 7}.span-6{grid-column:span 6}.span-5{grid-column:span 5}.span-4{grid-column:span 4}.span-3{grid-column:span 3}
+@media(max-width:1000px){.hero-grid{grid-template-columns:1fr}.span-8,.span-7,.span-6,.span-5,.span-4,.span-3{grid-column:span 12}}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}
+.card h2{font-size:20px;margin:0}.card h3{font-size:16px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:3px}
+.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.form-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.form-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){.form-grid,.form-grid.three,.form-grid.two{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.form-grid,.form-grid.three,.form-grid.two{grid-template-columns:1fr}}
+.field label{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;margin-bottom:5px}
+input,select,textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);
+  padding:10px 11px;outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:var(--primary2);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary2) 18%,transparent)}
+textarea{resize:vertical;min-height:76px}
+.range-row{display:grid;grid-template-columns:1fr 52px;align-items:center;gap:8px}
+input[type="range"]{padding:0;background:transparent}
+.help{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--primarySoft);color:var(--primary);font-size:11px;font-weight:900}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.kpis.six{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media(max-width:900px){.kpis.six{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.kpis,.kpis.six{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface2);border:1px solid var(--line);border-radius:13px;padding:12px}
+.kpi span{display:block;color:var(--muted);font-size:12px}.kpi strong{display:block;font-size:21px;margin-top:3px;line-height:1.1}
+.kpi em{font-style:normal;font-size:11px;color:var(--muted)}
+.alert{border-radius:13px;padding:13px 14px;border:1px solid;margin-top:12px}
+.alert.good{background:var(--goodBg);color:var(--good);border-color:color-mix(in srgb,var(--good) 30%,var(--line))}
+.alert.warn{background:var(--warnBg);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,var(--line))}
+.alert.bad{background:var(--badBg);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,var(--line))}
+.alert.info{background:var(--infoBg);color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,var(--line))}
+.alert b{display:block;margin-bottom:3px}
+.switches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+@media(max-width:600px){.switches{grid-template-columns:1fr}}
+.switch{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:10px;background:var(--surface2)}
+.switch input{width:auto;margin-top:2px}
+.switch b{display:block;font-size:13px}.switch small{display:block;color:var(--muted);margin-top:2px}
+.score-ring{--score:0;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;margin:auto;
+ background:conic-gradient(var(--primary2) calc(var(--score)*1%),var(--line) 0)}
+.score-ring:before{content:"";position:absolute;width:120px;height:120px;border-radius:50%;background:var(--surface)}
+.score-ring-wrap{position:relative}
+.score-value{position:relative;z-index:1;text-align:center}.score-value strong{display:block;font-size:38px}.score-value span{font-size:12px;color:var(--muted)}
+.decision{border-radius:16px;padding:17px;text-align:center;border:2px solid var(--line);margin-top:13px}
+.decision .label{font-size:12px;color:var(--muted)}.decision strong{font-size:25px;display:block;margin:3px 0}.decision p{margin:5px 0 0;font-size:13px}
+.decision.good{background:var(--goodBg);border-color:var(--good);color:var(--good)}
+.decision.warn{background:var(--warnBg);border-color:var(--warn);color:var(--warn)}
+.decision.bad{background:var(--badBg);border-color:var(--bad);color:var(--bad)}
+.decision.info{background:var(--infoBg);border-color:var(--info);color:var(--info)}
+.reasons{display:grid;gap:7px;margin-top:12px}.reason{display:flex;gap:8px;align-items:flex-start;border-bottom:1px dashed var(--line);padding-bottom:7px;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}.dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.info{background:var(--info)}
+.progress{height:8px;background:var(--line);border-radius:99px;overflow:hidden}.progress span{display:block;height:100%;background:var(--primary2);border-radius:99px}
+.exposure-list{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.chip{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 11px;font-weight:800;font-size:12px}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.matrix{width:100%;border-collapse:separate;border-spacing:4px;font-size:11px}
+.matrix th{color:var(--muted)}.matrix td{text-align:center;border-radius:7px;padding:7px;background:var(--surface2)}
+.plan{background:linear-gradient(135deg,var(--surface2),var(--primarySoft));border:1px solid var(--line);border-radius:15px;padding:14px}
+.plan-line{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:7px 0}.plan-line:last-child{border:0}.plan-line span{color:var(--muted)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px;max-height:460px}
+table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:right}
+th{position:sticky;top:0;background:var(--surface2);z-index:1;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.pos{color:var(--good);font-weight:800}.neg{color:var(--bad);font-weight:800}
+.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:var(--primarySoft);color:var(--primary)}
+.badge.alloc{background:var(--infoBg);color:var(--info)}.badge.trade{background:var(--goodBg);color:var(--good)}
+.canvas-wrap{height:260px;border:1px solid var(--line);border-radius:13px;padding:8px;background:var(--surface2)}
+canvas{width:100%;height:100%}
+.rule-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:700px){.rule-list{grid-template-columns:1fr}}
+.rule{border-right:4px solid var(--primary2);border-radius:11px;background:var(--surface2);padding:12px}
+.rule b{display:block;margin-bottom:4px}.rule small{color:var(--muted)}
+.footer{color:var(--muted);font-size:12px;text-align:center;padding:26px}
+.hide{display:none!important}
+.toast{position:fixed;left:20px;bottom:20px;z-index:80;background:var(--ink);color:var(--surface);border-radius:10px;padding:11px 14px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+@media print{
+  .topbar,.tabs,.no-print,.footer{display:none!important}.panel{display:none!important}#trade-panel{display:block!important}
+  body{background:#fff}.card{box-shadow:none;break-inside:avoid}.shell{margin:0;max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">TC</div>
+      <div><b>Trade Command Center</b><small>מערכת החלטה למסחר ממונף</small></div>
+    </div>
+    <div class="actions">
+      <a class="btn small" id="deskLink" href="../" style="text-decoration:none">מסך המומנטום</a>
+      <button class="icon-btn" id="themeBtn" title="מצב כהה">◐</button>
+      <button class="btn small soft" id="saveAllBtn">שמור מצב</button>
+      <button class="btn small" id="resetBtn">איפוס</button>
+    </div>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-grid">
+      <div>
+        <h1>מערכת משמעת וקבלת החלטות</h1>
+        <p>המערכת אינה מנסה לנבא את השוק. היא מונעת ממך להיכנס לעסקה שאינה מתאימה למצב היום, ליחס הסיכוי־סיכון, לעלות העמלה או לחשיפה שכבר קיימת.</p>
+      </div>
+      <div class="status-strip">
+        <div class="status-chip"><span>הרשאת מסחר</span><b id="heroPermission">ממתין לנתונים</b></div>
+        <div class="status-chip"><span>סיכון מותר</span><b id="heroRisk">$0</b></div>
+        <div class="status-chip"><span>ציון העסקה</span><b id="heroScore">0/100</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="shell">
+  <nav class="tabs no-print">
+    <button class="tab active" data-tab="session-panel">חדר מצב</button>
+    <button class="tab" data-tab="trade-panel">עסקה חדשה</button>
+    <button class="tab" data-tab="positions-panel">פוזיציות</button>
+    <button class="tab" data-tab="review-panel">תחקיר וסטטיסטיקה</button>
+    <button class="tab" data-tab="rules-panel">ספר חוקים</button>
+    <button class="tab" data-tab="settings-panel">הגדרות</button>
+  </nav>
+
+  <section id="session-panel" class="panel active">
+    <div class="grid">
+      <article class="card span-8">
+        <div class="card-head">
+          <div><h2>מצב המסחר היום</h2><div class="sub">מנוע הסיכון קובע אם מותר להיכנס, ובאיזה היקף.</div></div>
+          <button class="btn small soft no-print" id="loadTodayBtn">טען את יום 16.7 כדוגמה</button>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>רווח או הפסד נוכחי, $ <span class="help" title="לאחר עמלות">?</span></label><input id="sPnl" type="number" step="0.01" value="0"></div>
+          <div class="field"><label>שיא רווח יומי, $</label><input id="sPeak" type="number" step="0.01" value="0"></div>
+          <div class="field"><label>הפסדים רצופים</label><input id="sLossStreak" type="number" min="0" value="0"></div>
+          <div class="field"><label>ניסיונות באותה תזה</label><input id="sAttempts" type="number" min="0" value="0"></div>
+          <div class="field"><label>סיכון פתוח כרגע, $</label><input id="sOpenRisk" type="number" min="0" value="0"></div>
+          <div class="field"><label>עסקאות שבוצעו היום</label><input id="sTrades" type="number" min="0" value="0"></div>
+          <div class="field"><label>מצב שוק</label><select id="sMarket"><option value="2">מגמה ברורה והמשכיות</option><option value="1">סלקטיבי</option><option value="0" selected>לא ברור</option><option value="-1">פריצות נכשלות</option><option value="-2">כאוטי</option></select></div>
+          <div class="field"><label>איכות המבנה החדש</label><select id="sNewStructure"><option value="0">לא נוצר מבנה חדש</option><option value="1">שיפור חלקי</option><option value="2">מבנה חדש וברור</option></select></div>
+        </div>
+        <div class="switches" style="margin-top:11px">
+          <label class="switch"><input id="sRecovered" type="checkbox"><span><b>חזרתי מהפסד לרווח</b><small>מפעיל מצב הגנת רווח ומפחית סיכון.</small></span></label>
+          <label class="switch"><input id="sSameThesis" type="checkbox"><span><b>אותה תזה כבר נכשלה</b><small>למשל TQQQ, SPXL ועוד לונג ממונף על אותו שוק.</small></span></label>
+          <label class="switch"><input id="sEmotional" type="checkbox"><span><b>אני מרגיש צורך להחזיר</b><small>סימן לנקמה או דחיפות, לא ליתרון חדש.</small></span></label>
+          <label class="switch"><input id="sNewsRisk" type="checkbox"><span><b>אירוע חדשותי קרוב</b><small>דוח, מאקרו או כותרת שעלולים לבטל סטופ טכני.</small></span></label>
+        </div>
+      </article>
+
+      <article class="card span-4">
+        <div class="card-head"><div><h2>מושל הסיכון</h2><div class="sub">החלטה אוטומטית לפי מצב היום.</div></div></div>
+        <div class="kpis">
+          <div class="kpi"><span>סיכון בסיס</span><strong id="gBase">$400</strong></div>
+          <div class="kpi"><span>סיכון מותר</span><strong id="gAllowed">$0</strong></div>
+          <div class="kpi"><span>ויתור מהשיא</span><strong id="gGiveback">$0</strong></div>
+          <div class="kpi"><span>ניצול מגבלה</span><strong id="gUtil">0%</strong></div>
+        </div>
+        <div id="sessionDecision" class="decision info">
+          <div class="label">החלטת מערכת</div><strong>ממתין לנתונים</strong><p>הזן את מצב היום.</p>
+        </div>
+        <div id="sessionReasons" class="reasons"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><div><h2>רצפת הגנה יומית</h2><div class="sub">המערכת עוצרת לא רק בהפסד מרבי, אלא גם כאשר מוחקים רווח שכבר הושג.</div></div></div>
+        <div class="kpis six">
+          <div class="kpi"><span>הפסד יומי מרבי</span><strong id="floorMaxLoss">$1,200</strong></div>
+          <div class="kpi"><span>ויתור מרבי מהשיא</span><strong id="floorGiveback">$700</strong></div>
+          <div class="kpi"><span>רצפה לאחר התאוששות</span><strong id="floorRecovered">$0</strong></div>
+          <div class="kpi"><span>מקסימום עסקאות</span><strong id="floorTrades">8</strong></div>
+          <div class="kpi"><span>מקסימום סיכון פתוח</span><strong id="floorOpenRisk">$800</strong></div>
+          <div class="kpi"><span>סטטוס</span><strong id="floorStatus">תקין</strong></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="trade-panel" class="panel">
+    <div class="grid">
+      <article class="card span-8">
+        <div class="card-head">
+          <div><h2>תכנון עסקה</h2><div class="sub">הכמות מחושבת לפי נקודת הפסילה והסיכון המותר כרגע, כולל עמלה והחלקה.</div></div>
+          <div class="no-print"><button class="btn small" onclick="window.print()">הדפס תוכנית</button></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>סימול</label><input id="tSymbol" value="SOXL"></div>
+          <div class="field"><label>כיוון</label><select id="tSide"><option value="long">לונג</option><option value="short">שורט</option></select></div>
+          <div class="field"><label>קבוצת חשיפה</label><select id="tFamily"><option value="semi">שבבים</option><option value="nasdaq">נאסד״ק</option><option value="broad">שוק רחב</option><option value="software">תוכנה</option><option value="single">חברה בודדת</option><option value="other">אחר</option></select></div>
+          <div class="field"><label>סוג עסקה</label><select id="tType"><option>מומנטום</option><option>פריצה</option><option>חזרה ל־VWAP</option><option>היפוך</option><option>שינוי הקצאה</option><option>סווינג</option></select></div>
+          <div class="field"><label>מחיר כניסה</label><input id="tEntry" type="number" step="0.01" value="150"></div>
+          <div class="field"><label>פסילה טכנית</label><input id="tStop" type="number" step="0.01" value="148.8"></div>
+          <div class="field"><label>יעד ראשון</label><input id="tTarget1" type="number" step="0.01" value="152.5"></div>
+          <div class="field"><label>יעד שני</label><input id="tTarget2" type="number" step="0.01" value="154"></div>
+          <div class="field"><label>מימוש ביעד ראשון</label><select id="tTarget1Share"><option value=".25">25%</option><option value=".5" selected>50%</option><option value=".75">75%</option><option value="1">100%</option></select></div>
+          <div class="field"><label>הון מקסימלי לעסקה</label><input id="tCapitalPct" type="number" min="1" max="100" value="70"><small class="sub">אחוז מההון הזמין</small></div>
+          <div class="field"><label>עמלה לכל צד</label><input id="tCommission" type="number" step="0.001" value="0.08"><small class="sub">באחוזים</small></div>
+          <div class="field"><label>החלקה משוערת</label><input id="tSlippage" type="number" step="0.1" value="2"><small class="sub">נקודות בסיס לכל צד</small></div>
+        </div>
+
+        <div id="liveBar" class="alert info no-print" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <b style="margin:0">מחיר חי</b>
+          <span id="liveQuote">הזן סימול כדי למשוך מחיר</span>
+          <span style="display:flex;gap:7px;margin-inline-start:auto">
+            <button class="btn small soft" id="liveRefreshBtn">משוך מחיר</button>
+            <button class="btn small" id="liveToEntryBtn">קבע ככניסה</button>
+          </span>
+        </div>
+
+        <h3 style="margin:18px 0 10px">איכות הסט־אפ</h3>
+        <div class="form-grid two">
+          <div class="field"><label>התאמה למגמת השוק</label><div class="range-row"><input id="qMarket" type="range" min="0" max="15" value="8"><b id="qMarketV">8</b></div></div>
+          <div class="field"><label>חוזק יחסי של הסקטור</label><div class="range-row"><input id="qSector" type="range" min="0" max="15" value="8"><b id="qSectorV">8</b></div></div>
+          <div class="field"><label>איכות מיקום הכניסה</label><div class="range-row"><input id="qEntry" type="range" min="0" max="15" value="8"><b id="qEntryV">8</b></div></div>
+          <div class="field"><label>מחזור ואישור</label><div class="range-row"><input id="qVolume" type="range" min="0" max="10" value="5"><b id="qVolumeV">5</b></div></div>
+          <div class="field"><label>קטליזטור או סיבה ברורה</label><div class="range-row"><input id="qCatalyst" type="range" min="0" max="10" value="5"><b id="qCatalystV">5</b></div></div>
+          <div class="field"><label>בהירות נקודת הפסילה</label><div class="range-row"><input id="qInvalidation" type="range" min="0" max="15" value="10"><b id="qInvalidationV">10</b></div></div>
+        </div>
+
+        <h3 style="margin:18px 0 10px">בדיקת התנהגות</h3>
+        <div class="switches">
+          <label class="switch"><input id="bFomo" type="checkbox"><span><b>אני רודף אחרי מחיר</b><small>המחיר התרחק מנקודת הכניסה המקורית.</small></span></label>
+          <label class="switch"><input id="bRevenge" type="checkbox"><span><b>המטרה היא להחזיר הפסד</b><small>העסקה נובעת מהתוצאה הקודמת, לא מהסט־אפ.</small></span></label>
+          <label class="switch"><input id="bLate" type="checkbox"><span><b>הכניסה מאוחרת במהלך</b><small>חלק גדול מהטווח כבר התרחש.</small></span></label>
+          <label class="switch"><input id="bMoveStop" type="checkbox"><span><b>אני מוכן להזיז סטופ</b><small>חסם קשיח. אסור להיכנס ללא קבלת הפסד מוגדר.</small></span></label>
+          <label class="switch"><input id="bThesisFailed" type="checkbox"><span><b>התזה כבר נכשלה היום</b><small>נדרש מבנה חדש וברור, לא רק מחיר נמוך יותר.</small></span></label>
+          <label class="switch"><input id="bClearPlan" type="checkbox" checked><span><b>התוכנית כתובה מראש</b><small>כניסה, פסילה, יעדים וכמות.</small></span></label>
+        </div>
+
+        <h3 style="margin:18px 0 10px">חשיפות פתוחות או עסקאות שבוצעו באותה תזה</h3>
+        <div id="exposureChips" class="exposure-list"></div>
+        <input id="customExposure" placeholder="סימולים נוספים, מופרדים בפסיקים" style="margin-top:9px">
+      </article>
+
+      <article class="card span-4">
+        <div class="score-ring-wrap">
+          <div id="scoreRing" class="score-ring"><div class="score-value"><strong id="scoreValue">0</strong><span>מתוך 100</span></div></div>
+        </div>
+        <div id="tradeDecision" class="decision info">
+          <div class="label">החלטת מערכת</div><strong>ממתין</strong><p>השלם את פרטי העסקה.</p>
+        </div>
+        <div class="kpis" style="margin-top:12px">
+          <div class="kpi"><span>כמות</span><strong id="mQty">0</strong></div>
+          <div class="kpi"><span>שווי פוזיציה</span><strong id="mPosition">$0</strong></div>
+          <div class="kpi"><span>הפסד בסטופ</span><strong id="mLoss">$0</strong></div>
+          <div class="kpi"><span>רווח משוקלל</span><strong id="mProfit">$0</strong></div>
+          <div class="kpi"><span>יחס נטו</span><strong id="mRR">0.00</strong></div>
+          <div class="kpi"><span>עלות סיבוב</span><strong id="mCost">$0</strong></div>
+          <div class="kpi"><span>מרחק סטופ</span><strong id="mStopPct">0%</strong></div>
+          <div class="kpi"><span>חפיפה</span><strong id="mOverlap">0%</strong></div>
+        </div>
+        <div id="tradeReasons" class="reasons"></div>
+        <div class="no-print" style="display:flex;gap:8px;margin-top:13px">
+          <button class="btn primary" id="savePlanBtn" style="flex:1">שמור כתוכנית</button>
+          <button class="btn soft" id="copyPlanBtn">העתק</button>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <div class="card-head"><div><h2>כרטיס תוכנית</h2><div class="sub">המספרים שעליהם העסקה נשפטת.</div></div></div>
+        <div class="plan" id="planCard">
+          <div class="plan-line"><span>עסקה</span><b id="pTrade">SOXL לונג</b></div>
+          <div class="plan-line"><span>כניסה / פסילה</span><b id="pEntryStop">150 / 148.80</b></div>
+          <div class="plan-line"><span>יעדים</span><b id="pTargets">152.50 / 154.00</b></div>
+          <div class="plan-line"><span>כמות ושווי</span><b id="pSize">0 / $0</b></div>
+          <div class="plan-line"><span>סיכון נטו</span><b id="pRisk">$0</b></div>
+          <div class="plan-line"><span>תנאי יציאה</span><b id="pInvalidation">שבירת רמת הפסילה</b></div>
+          <div class="plan-line"><span>החלטה</span><b id="pDecision">ממתין</b></div>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <div class="card-head"><div><h2>מפת החפיפה</h2><div class="sub">הערכת מתאם רעיונית, לא מתאם סטטיסטי בזמן אמת.</div></div></div>
+        <div class="table-wrap" style="max-height:none">
+          <table class="matrix" id="overlapMatrix"></table>
+        </div>
+        <div id="overlapAlert" class="alert info">בחר חשיפות כדי לראות את ההשפעה.</div>
+      </article>
+    </div>
+  </section>
+
+  <section id="positions-panel" class="panel">
+    <div class="grid">
+      <article class="card">
+        <div class="card-head">
+          <div><h2>תוכניות ופוזיציות פתוחות</h2><div class="sub">המחיר הנוכחי נמשך אוטומטית מהשוק, או מוזן ידנית. רווח, הפסד, R ופריצת סטופ מתעדכנים בהתאם.</div></div>
+          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn small soft" id="refreshPricesBtn">רענן מחירים</button>
+            <button class="btn small" id="autoPricesBtn">אוטומטי: כבוי</button>
+            <button class="btn small danger" id="clearPositionsBtn">נקה הכול</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>סטטוס</th><th>סימול</th><th>כיוון</th><th>כמות</th><th>כניסה</th><th>מחיר נוכחי</th><th>פסילה</th><th>יעד</th><th>נטו משוער</th><th>R</th><th>פעולות</th></tr></thead>
+            <tbody id="positionsBody"></tbody>
+          </table>
+        </div>
+        <div id="positionsEmpty" class="alert info">עדיין לא נשמרה תוכנית. עבור ללשונית „עסקה חדשה”.</div>
+        <div id="pricesStamp" class="sub" style="margin-top:8px"></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="review-panel" class="panel">
+    <div class="grid">
+      <article class="card">
+        <div class="card-head">
+          <div><h2>תחקיר עסקאות</h2><div class="sub">אפשר לטעון את פעולות 16.7 כדוגמה, להוסיף עסקאות ולייצא CSV.</div></div>
+          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn small soft" id="loadJournalToday">טען פעולות 16.7</button>
+            <button class="btn small" id="exportJournal">ייצא CSV</button>
+            <label class="btn small" style="cursor:pointer">ייבא CSV<input id="importJournal" type="file" accept=".csv" hidden></label>
+            <button class="btn small danger" id="clearJournal">נקה</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>תאריך</label><input id="jDate" type="date"></div>
+          <div class="field"><label>סימול</label><input id="jSymbol" value="SOXL"></div>
+          <div class="field"><label>כמות</label><input id="jQty" type="number" value="100"></div>
+          <div class="field"><label>כניסה</label><input id="jEntry" type="number" step="0.01"></div>
+          <div class="field"><label>יציאה</label><input id="jExit" type="number" step="0.01"></div>
+          <div class="field"><label>סיווג</label><select id="jClass"><option value="trade">עסקת מסחר</option><option value="allocation">שינוי הקצאה</option></select></div>
+          <div class="field"><label>ציון סט־אפ</label><input id="jScore" type="number" min="0" max="100" value="70"></div>
+          <div class="field"><label>עמלה לכל צד</label><input id="jComm" type="number" step=".001" value=".08"></div>
+        </div>
+        <div class="form-grid two" style="margin-top:10px">
+          <div class="field"><label>סיבת כניסה</label><input id="jReason" placeholder="פריצה, חוזק יחסי, VWAP..."></div>
+          <div class="field"><label>לקח</label><input id="jLesson" placeholder="מה אשמור או אשנה בפעם הבאה"></div>
+        </div>
+        <button class="btn primary no-print" id="addJournalBtn" style="margin-top:11px">הוסף עסקה</button>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div><h2>מדדי איכות</h2><div class="sub">שינויי הקצאה אינם נכללים באיכות המסחר, אלא אם תבחר אחרת.</div></div>
+          <label class="switch no-print" style="padding:7px 10px"><input id="includeAlloc" type="checkbox"><span><b>כלול שינויי הקצאה</b></span></label>
+        </div>
+        <div class="kpis six">
+          <div class="kpi"><span>רווח נטו</span><strong id="aNet">$0</strong></div>
+          <div class="kpi"><span>עמלות</span><strong id="aFees">$0</strong></div>
+          <div class="kpi"><span>שיעור הצלחה</span><strong id="aWin">0%</strong></div>
+          <div class="kpi"><span>Profit Factor</span><strong id="aPF">0.00</strong></div>
+          <div class="kpi"><span>תוחלת לעסקה</span><strong id="aExpect">$0</strong></div>
+          <div class="kpi"><span>משיכת שיא</span><strong id="aDD">$0</strong></div>
+        </div>
+      </article>
+
+      <article class="card span-7">
+        <div class="card-head"><div><h2>עקומת תוצאה מצטברת</h2></div></div>
+        <div class="canvas-wrap"><canvas id="equityCanvas"></canvas></div>
+      </article>
+      <article class="card span-5">
+        <div class="card-head"><div><h2>רווח נטו לפי סימול</h2></div></div>
+        <div class="canvas-wrap"><canvas id="symbolCanvas"></canvas></div>
+      </article>
+
+      <article class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>תאריך</th><th>סימול</th><th>סיווג</th><th>כמות</th><th>כניסה</th><th>יציאה</th><th>ברוטו</th><th>עמלות</th><th>נטו</th><th>ציון</th><th>לקח</th><th></th></tr></thead>
+            <tbody id="journalBody"></tbody>
+          </table>
+        </div>
+        <div id="journalEmpty" class="alert info">אין עסקאות ביומן.</div>
+      </article>
+    </div>
+  </section>
+
+  <section id="rules-panel" class="panel">
+    <div class="grid">
+      <article class="card">
+        <div class="card-head"><div><h2>ספר החוקים האישי</h2><div class="sub">חוקים הנגזרים מהאופן שבו פעלת ב־16.7.</div></div></div>
+        <div class="rule-list">
+          <div class="rule"><b>1. פסילה טכנית, לא סיבולת כאב</b><small>SOXL: אם המבנה שבגללו נכנסת נשבר, יוצאים. אין צורך להמתין לתנועה של 3% נגדך.</small></div>
+          <div class="rule"><b>2. כמות נגזרת מהסטופ</b><small>סטופ רחב אינו אסור. הוא מחייב כמות קטנה יותר כדי לשמור על אותו הפסד כספי.</small></div>
+          <div class="rule"><b>3. שתי תקלות באותה תזה מחייבות Reset</b><small>הפסד ב־TQQQ וב־SPXL אינו שני רעיונות נפרדים, אלא שתי גרסאות של אותה תזת בטא.</small></div>
+          <div class="rule"><b>4. לאחר התאוששות, עוברים להגנה</b><small>לאחר ש־SOXL החזיר את היום ממינוס משמעותי לפלוס, הסיכון הבא צריך לרדת בחצי.</small></div>
+          <div class="rule"><b>5. רעיון אחד, מכשיר אחד</b><small>כאשר היתרון נמצא בשבבים, אין צורך להוסיף במקביל TQQQ ו־SPXL ללא סיבה עצמאית.</small></div>
+          <div class="rule"><b>6. אין ניסיון שלישי ללא מידע חדש</b><small>מחיר נמוך יותר אינו „מבנה חדש”. מבנה חדש הוא למשל חזרה מעל VWAP, שפל עולה ופריצה מאושרת.</small></div>
+          <div class="rule"><b>7. העמלה נבחנת לפני הכניסה</b><small>עלות בסיסית של 0.16% לסיבוב מחייבת יעד שמותיר יתרון אמיתי לאחר עלויות והחלקה.</small></div>
+          <div class="rule"><b>8. שינוי הקצאה אינו טעות מסחר</b><small>INTU מסווגת בנפרד, משום שהמכירה בוצעה כדי להעביר הון לחשיפה ממונפת.</small></div>
+          <div class="rule"><b>9. מגינים גם על רווח שכבר הושג</b><small>מגבלת Giveback מונעת מעבר מפלוס משמעותי חזרה למינוס באמצעות רצף ניסיונות.</small></div>
+          <div class="rule"><b>10. עסקה מאושרת רק עם תוכנית כתובה</b><small>כניסה, פסילה, יעדים, כמות, סיכון נטו וסיבת ביטול, לפני שליחת הפקודה.</small></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="settings-panel" class="panel">
+    <div class="grid">
+      <article class="card span-7">
+        <div class="card-head"><div><h2>הגדרות סיכון</h2><div class="sub">כל שינוי נשמר מקומית בדפדפן.</div></div></div>
+        <div class="form-grid three">
+          <div class="field"><label>הון זמין, $</label><input id="setAccount" type="number" value="100000"></div>
+          <div class="field"><label>סיכון בסיס לעסקה, $</label><input id="setBaseRisk" type="number" value="400"></div>
+          <div class="field"><label>הפסד יומי מרבי, $</label><input id="setMaxLoss" type="number" value="1200"></div>
+          <div class="field"><label>ויתור מרבי מהשיא, $</label><input id="setMaxGiveback" type="number" value="700"></div>
+          <div class="field"><label>מקסימום עסקאות ביום</label><input id="setMaxTrades" type="number" value="8"></div>
+          <div class="field"><label>מכפיל סיכון פתוח</label><input id="setOpenRiskMult" type="number" step=".1" value="2"></div>
+          <div class="field"><label>ציון לסיכון מלא</label><input id="setFullScore" type="number" value="80"></div>
+          <div class="field"><label>ציון לחצי סיכון</label><input id="setHalfScore" type="number" value="65"></div>
+          <div class="field"><label>יחס נטו מינימלי</label><input id="setMinRR" type="number" step=".1" value="1.5"></div>
+        </div>
+        <button class="btn primary no-print" id="applySettings" style="margin-top:12px">החל הגדרות</button>
+      </article>
+      <article class="card span-5">
+        <div class="card-head"><div><h2>עקרון החישוב</h2></div></div>
+        <div class="alert info">
+          <b>המערכת משתמשת בשני סוגי כללים</b>
+          חסמים קשיחים פוסלים עסקה גם אם הציון גבוה. לאחר מכן ציון האיכות קובע סיכון מלא, חצי סיכון או המתנה.
+        </div>
+        <div class="reasons">
+          <div class="reason"><span class="dot bad"></span><span><b>חסם קשיח:</b> אין פסילה ברורה, יחס נטו נמוך, נקמה, הזזת סטופ או חריגה ממגבלה יומית.</span></div>
+          <div class="reason"><span class="dot warn"></span><span><b>הפחתת סיכון:</b> חזרת מהפסד לרווח, חפיפה בינונית, שוק סלקטיבי או ציון ביניים.</span></div>
+          <div class="reason"><span class="dot good"></span><span><b>סיכון מלא:</b> אין חסמים, הציון גבוה, היחס נטו תקין והמצב היומי מאפשר זאת.</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<div class="footer">הכלי מיועד לתכנון ולמשמעת. מחירים חיים נמשכים משירות הנתונים של Momentum Desk ועשויים להגיע בעיכוב קל. אינו מהווה ייעוץ השקעות.</div>
+<div id="toast" class="toast">נשמר</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const $$=sel=>[...document.querySelectorAll(sel)];
+const money=n=>'$'+(Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:2});
+const num=n=>(Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:2});
+const pct=n=>(Number(n)||0).toFixed(2)+'%';
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const storeKey='doronTradeCommandCenterV2';
+
+const defaultSettings={account:100000,baseRisk:400,maxLoss:1200,maxGiveback:700,maxTrades:8,openRiskMult:2,fullScore:80,halfScore:65,minRR:1.5};
+let settings={...defaultSettings,...JSON.parse(localStorage.getItem(storeKey+'_settings')||'{}')};
+let positions=JSON.parse(localStorage.getItem(storeKey+'_positions')||'[]');
+let journal=JSON.parse(localStorage.getItem(storeKey+'_journal')||'[]');
+let currentTrade={};
+let exposureSelected=new Set();
+
+const exposureUniverse=[
+ {s:'SOXL',f:'semi'},{s:'TQQQ',f:'nasdaq'},{s:'SPXL',f:'broad'},{s:'NOW',f:'software'},{s:'NOWL',f:'software'},
+ {s:'MSFT',f:'software'},{s:'MSFL',f:'software'},{s:'QQQ',f:'nasdaq'},{s:'SOXX',f:'semi'}
+];
+const overlapPairs={
+ 'NOW|NOWL':1,'MSFT|MSFL':1,'QQQ|TQQQ':1,'SOXX|SOXL':1,
+ 'SOXL|TQQQ':.78,'SOXL|QQQ':.72,'SOXL|SPXL':.54,'TQQQ|SPXL':.70,'QQQ|SPXL':.63,
+ 'SOXX|TQQQ':.70,'SOXX|QQQ':.65,'NOW|TQQQ':.42,'NOWL|TQQQ':.62,'MSFL|TQQQ':.62
+};
+function pairKey(a,b){return [a,b].sort().join('|')}
+function overlap(a,b){
+ if(a===b)return 1;
+ const direct=overlapPairs[pairKey(a,b)];
+ if(direct!=null)return direct;
+ const A=exposureUniverse.find(x=>x.s===a),B=exposureUniverse.find(x=>x.s===b);
+ if(A&&B&&A.f===B.f)return .55;
+ return .18;
+}
+
+function toast(msg='נשמר'){
+ const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)
+}
+function setDecision(el,kind,title,text){
+ el.className='decision '+kind;
+ el.innerHTML=`<div class="label">החלטת מערכת</div><strong>${title}</strong><p>${text}</p>`;
+}
+function reasonHtml(kind,text){return `<div class="reason"><span class="dot ${kind}"></span><span>${text}</span></div>`}
+
+function sessionEngine(){
+ const pnl=+$('sPnl').value||0,peak=Math.max(+$('sPeak').value||0,pnl),streak=+$('sLossStreak').value||0;
+ const attempts=+$('sAttempts').value||0,openRisk=+$('sOpenRisk').value||0,trades=+$('sTrades').value||0;
+ const market=+$('sMarket').value||0,newStructure=+$('sNewStructure').value||0;
+ const recovered=$('sRecovered').checked,same=$('sSameThesis').checked,emotional=$('sEmotional').checked,news=$('sNewsRisk').checked;
+ const giveback=Math.max(0,peak-pnl),maxOpen=settings.baseRisk*settings.openRiskMult;
+ let factor=1,permission='סיכון מלא',kind='good',reasons=[],blocked=false;
+
+ if(pnl<=-settings.maxLoss){blocked=true;permission='עצירה יומית';kind='bad';reasons.push(['bad','הגעת למגבלת ההפסד היומית. אין עסקה נוספת.'])}
+ if(peak>0&&giveback>=settings.maxGiveback){blocked=true;permission='עצירת Giveback';kind='bad';reasons.push(['bad','מחיקת הרווח מהשיא חצתה את המגבלה שהוגדרה.'])}
+ if(trades>=settings.maxTrades){blocked=true;permission='מכסת העסקאות מלאה';kind='bad';reasons.push(['bad','הגעת למספר העסקאות המרבי ליום.'])}
+ if(openRisk>=maxOpen){blocked=true;permission='סיכון פתוח מלא';kind='bad';reasons.push(['bad','הסיכון הפתוח כבר ממצה את המגבלה.'])}
+ if(emotional){blocked=true;permission='עצירה התנהגותית';kind='bad';reasons.push(['bad','הצורך להחזיר הפסד הוא חסם קשיח, לא סיבה להגדיל סיכון.'])}
+ if((streak>=2||attempts>=2||same)&&newStructure<2){
+   blocked=true;permission='נדרש Reset';kind='bad';reasons.push(['bad','אותה תזה נכשלה או נרשמו שני ניסיונות, ולא הוגדר מבנה חדש וברור.'])
+ }
+
+ if(!blocked){
+   if(recovered){factor=Math.min(factor,.5);kind='warn';permission='חצי סיכון';reasons.push(['warn','היום חזר מהפסד לרווח, לכן מופעל מצב הגנת רווח.'])}
+   if(market<=0){factor=Math.min(factor,.5);kind='warn';permission='חצי סיכון';reasons.push(['warn','מצב השוק אינו מספק המשכיות ברורה.'])}
+   if(news){factor=Math.min(factor,.5);kind='warn';permission='חצי סיכון';reasons.push(['warn','אירוע חדשותי קרוב עלול להפוך את הפסילה הטכנית ללא יעילה.'])}
+   if(newStructure===2)reasons.push(['good','נוצר מבנה חדש וברור, לכן אפשר לבחון עסקה מחדש.']);
+   if(!reasons.length)reasons.push(['good','אין מגבלת יום פעילה. הסיכון הבסיסי מותר.']);
+ }
+ const allowed=blocked?0:Math.max(0,settings.baseRisk*factor-openRisk);
+ const util=maxOpen?openRisk/maxOpen*100:0;
+
+ $('gBase').textContent=money(settings.baseRisk);$('gAllowed').textContent=money(allowed);$('gGiveback').textContent=money(giveback);$('gUtil').textContent=pct(util);
+ $('heroPermission').textContent=permission;$('heroRisk').textContent=money(allowed);
+ setDecision($('sessionDecision'),kind,permission,blocked?'אין לפתוח עסקה חדשה עד לאיפוס התנאים.':`סיכון מרבי לעסקה הבאה: ${money(allowed)}.`);
+ $('sessionReasons').innerHTML=reasons.map(x=>reasonHtml(x[0],x[1])).join('');
+ $('floorMaxLoss').textContent=money(settings.maxLoss);$('floorGiveback').textContent=money(settings.maxGiveback);
+ $('floorRecovered').textContent=money(Math.max(0,peak-settings.maxGiveback));
+ $('floorTrades').textContent=settings.maxTrades;$('floorOpenRisk').textContent=money(maxOpen);
+ $('floorStatus').textContent=blocked?'נעול':'תקין';$('floorStatus').className=blocked?'neg':'pos';
+ window.sessionResult={allowed,blocked,permission,kind,giveback,market,newStructure,recovered,same,attempts,streak};
+ tradeEngine();
+}
+
+function tradeMath(){
+ const side=$('tSide').value,entry=+$('tEntry').value||0,stop=+$('tStop').value||0,t1=+$('tTarget1').value||0,t2=+$('tTarget2').value||0;
+ const comm=(+$('tCommission').value||0)/100,slip=(+$('tSlippage').value||0)/10000,share=+$('tTarget1Share').value||.5;
+ const riskAllowed=window.sessionResult?.allowed||0,capLimit=settings.account*(+$('tCapitalPct').value||0)/100;
+ const riskMove=side==='long'?entry-stop:stop-entry;
+ const reward1=side==='long'?t1-entry:entry-t1,reward2=side==='long'?t2-entry:entry-t2;
+ const stopCost=entry*comm+stop*comm+(entry+stop)*slip;
+ const riskPer=Math.max(0,riskMove)+stopCost;
+ const maxQtyRisk=riskPer>0?Math.floor(riskAllowed/riskPer):0;
+ const maxQtyCap=entry>0?Math.floor(capLimit/entry):0;
+ const qty=Math.max(0,Math.min(maxQtyRisk,maxQtyCap));
+ const weightedExit=t1*share+t2*(1-share);
+ const exitFee=qty*(entry+weightedExit)*comm;
+ const slipCost=qty*(entry+weightedExit)*slip;
+ const grossReward=qty*(Math.max(0,reward1)*share+Math.max(0,reward2)*(1-share));
+ const netProfit=grossReward-exitFee-slipCost;
+ const netLoss=qty*riskPer;
+ const rr=netLoss>0?netProfit/netLoss:0;
+ const position=qty*entry;
+ const totalCost=exitFee+slipCost;
+ const stopPct=entry?Math.abs(riskMove)/entry*100:0;
+ return {side,entry,stop,t1,t2,comm,slip,share,riskAllowed,capLimit,riskMove,reward1,reward2,riskPer,qty,position,netProfit,netLoss,rr,totalCost,stopPct,weightedExit};
+}
+
+function calculateOverlap(){
+ const planned=$('tSymbol').value.trim().toUpperCase()||'';
+ const custom=$('customExposure').value.toUpperCase().split(',').map(s=>s.trim()).filter(Boolean);
+ const existing=[...new Set([...exposureSelected,...custom])].filter(x=>x!==planned);
+ if(!planned||!existing.length)return {score:0,existing,detail:[]};
+ const vals=existing.map(x=>({s:x,v:overlap(planned,x)})).sort((a,b)=>b.v-a.v);
+ const score=Math.round(Math.min(1,vals.reduce((a,x)=>a+x.v,0)/Math.max(1,Math.sqrt(vals.length)))*100);
+ return {score,existing,detail:vals};
+}
+
+function tradeEngine(){
+ if(!window.sessionResult)return;
+ const m=tradeMath(),ov=calculateOverlap();
+ const qMarket=+$('qMarket').value,qSector=+$('qSector').value,qEntry=+$('qEntry').value,qVolume=+$('qVolume').value,qCatalyst=+$('qCatalyst').value,qInvalidation=+$('qInvalidation').value;
+ let base=qMarket+qSector+qEntry+qVolume+qCatalyst+qInvalidation;
+ let rrScore=m.rr>=2?20:m.rr>=settings.minRR?16:m.rr>=1?8:0;
+ let behavior=10;
+ if($('bFomo').checked)behavior-=8;if($('bLate').checked)behavior-=6;if($('bThesisFailed').checked)behavior-=8;
+ if($('bClearPlan').checked)behavior+=5;
+ let score=clamp(Math.round(base+rrScore+behavior-(ov.score>=70?12:ov.score>=40?6:0)),0,100);
+ let blockers=[],warnings=[],positives=[];
+ const sideValid=m.side==='long'?(m.entry>m.stop&&m.t1>m.entry&&m.t2>=m.t1):(m.entry<m.stop&&m.t1<m.entry&&m.t2<=m.t1);
+ if(!sideValid)blockers.push('סדר המחירים אינו מתאים לכיוון העסקה.');
+ if(window.sessionResult.blocked)blockers.push('מושל הסיכון היומי אינו מאפשר עסקה חדשה.');
+ if(m.riskAllowed<=0)blockers.push('אין תקציב סיכון זמין.');
+ if(m.qty<=0)blockers.push('לא ניתן לחשב כמות חיובית במסגרת הסיכון וההון.');
+ if(m.rr<1)blockers.push('יחס הסיכוי־סיכון נטו נמוך מ־1.');
+ if(qInvalidation<8)blockers.push('נקודת הפסילה אינה ברורה מספיק.');
+ if($('bRevenge').checked)blockers.push('העסקה מוגדרת כניסיון להחזיר הפסד.');
+ if($('bMoveStop').checked)blockers.push('נכונות להזיז סטופ היא חסם קשיח.');
+ if($('bThesisFailed').checked && window.sessionResult.newStructure<2)blockers.push('התזה נכשלה ולא הוגדר מבנה חדש וברור.');
+ if(m.rr>=1&&m.rr<settings.minRR)warnings.push(`היחס נטו ${m.rr.toFixed(2)} נמוך מהסף ${settings.minRR}.`);
+ if(m.stopPct>2)warnings.push('הסטופ רחב מ־2%, הכמות הוקטנה בהתאם.');
+ if(ov.score>=70)warnings.push('החפיפה לחשיפות קיימות גבוהה מאוד.');
+ else if(ov.score>=40)warnings.push('קיימת חפיפה בינונית לחשיפות אחרות.');
+ if($('bFomo').checked)warnings.push('הכניסה מסומנת כרדיפה אחרי מחיר.');
+ if($('bLate').checked)warnings.push('חלק משמעותי מהמהלך כבר התרחש.');
+ if(m.rr>=settings.minRR)positives.push(`יחס סיכוי־סיכון נטו עומד בסף: ${m.rr.toFixed(2)}.`);
+ if(qInvalidation>=12)positives.push('נקודת הפסילה מוגדרת היטב.');
+ if(score>=settings.fullScore)positives.push('איכות הסט־אפ גבוהה לפי הציון שהוזן.');
+
+ let title='פסול',kind='bad',riskFactor=0,text='קיים חסם קשיח.';
+ if(!blockers.length){
+   if(score>=settings.fullScore && !warnings.length){title='מאושר, סיכון מלא';kind='good';riskFactor=1;text='העסקה עומדת בתנאי האיכות והסיכון.'}
+   else if(score>=settings.halfScore){title='מאושר, חצי סיכון';kind='warn';riskFactor=.5;text='העסקה סבירה, אך קיימים גורמי זהירות.'}
+   else if(score>=50){title='המתנה לאישור נוסף';kind='info';riskFactor=0;text='הסט־אפ אינו חלש, אך עדיין לא מצדיק כניסה.'}
+   else{title='לא מאושר';kind='bad';riskFactor=0;text='ציון האיכות נמוך מדי.'}
+ }
+ if(riskFactor<1&&m.qty>0){
+   const factorQty=Math.floor(m.qty*riskFactor);
+   if(riskFactor===.5 && factorQty<1){blockers.push('חצי הכמות המחושבת קטן מיחידה אחת.');title='פסול';kind='bad';riskFactor=0}
+ }
+ const finalQty=Math.floor(m.qty*riskFactor);
+ const adjustedLoss=m.qty?m.netLoss*(finalQty/m.qty):0,adjustedProfit=m.qty?m.netProfit*(finalQty/m.qty):0,adjustedPosition=m.entry*finalQty;
+ const adjustedCost=m.qty?m.totalCost*(finalQty/m.qty):0;
+
+ $('scoreRing').style.setProperty('--score',score);$('scoreValue').textContent=score;$('heroScore').textContent=score+'/100';
+ setDecision($('tradeDecision'),kind,title,text);
+ const reasonItems=[
+   ...blockers.map(x=>['bad',x]),...warnings.map(x=>['warn',x]),...positives.map(x=>['good',x])
+ ];
+ if(!reasonItems.length)reasonItems.push(['info','הזן נתונים מלאים כדי לקבל ניתוח.']);
+ $('tradeReasons').innerHTML=reasonItems.map(x=>reasonHtml(x[0],x[1])).join('');
+
+ $('mQty').textContent=num(finalQty);$('mPosition').textContent=money(adjustedPosition);$('mLoss').textContent=money(adjustedLoss);
+ $('mProfit').textContent=money(adjustedProfit);$('mRR').textContent=m.rr.toFixed(2);$('mCost').textContent=money(adjustedCost);
+ $('mStopPct').textContent=pct(m.stopPct);$('mOverlap').textContent=ov.score+'%';
+
+ const sym=$('tSymbol').value.trim().toUpperCase(),sideText=m.side==='long'?'לונג':'שורט';
+ $('pTrade').textContent=`${sym} ${sideText} | ${$('tType').value}`;
+ $('pEntryStop').textContent=`${num(m.entry)} / ${num(m.stop)}`;$('pTargets').textContent=`${num(m.t1)} / ${num(m.t2)}`;
+ $('pSize').textContent=`${num(finalQty)} / ${money(adjustedPosition)}`;$('pRisk').textContent=money(adjustedLoss);
+ $('pInvalidation').textContent=`יציאה כאשר ${num(m.stop)} נשברת לפי התרחיש`;
+ $('pDecision').textContent=title;
+ $('overlapAlert').className='alert '+(ov.score>=70?'bad':ov.score>=40?'warn':'good');
+ $('overlapAlert').textContent=ov.existing.length?`חפיפה משוקללת: ${ov.score}%. ${ov.detail.map(x=>`${x.s} ${Math.round(x.v*100)}%`).join(' | ')}`:'לא נבחרה חשיפה קיימת.';
+ currentTrade={sym,side:m.side,type:$('tType').value,family:$('tFamily').value,entry:m.entry,stop:m.stop,target:m.weightedExit,t1:m.t1,t2:m.t2,qty:finalQty,position:adjustedPosition,netLoss:adjustedLoss,netProfit:adjustedProfit,rr:m.rr,score,decision:title,kind,created:new Date().toISOString(),commission:+$('tCommission').value,slippage:+$('tSlippage').value};
+ renderOverlapMatrix(sym,ov.existing);
+}
+
+function renderExposureChips(){
+ $('exposureChips').innerHTML=exposureUniverse.map(x=>`<button class="chip ${exposureSelected.has(x.s)?'active':''}" data-s="${x.s}">${x.s}</button>`).join('');
+ $$('#exposureChips .chip').forEach(b=>b.onclick=()=>{
+   const s=b.dataset.s;exposureSelected.has(s)?exposureSelected.delete(s):exposureSelected.add(s);renderExposureChips();tradeEngine();
+ });
+}
+function renderOverlapMatrix(planned,existing){
+ const syms=[...new Set([planned,...existing])].filter(Boolean).slice(0,7);
+ if(!syms.length){$('overlapMatrix').innerHTML='';return}
+ let h='<tr><th></th>'+syms.map(s=>`<th>${esc(s)}</th>`).join('')+'</tr>';
+ syms.forEach(a=>{
+   h+=`<tr><th>${esc(a)}</th>`+syms.map(b=>{
+     const v=Math.round(overlap(a,b)*100),alpha=.10+.55*v/100;
+     return `<td style="background:color-mix(in srgb,var(--primary2) ${Math.round(alpha*100)}%,var(--surface2));font-weight:${v>=70?800:500}">${v}%</td>`;
+   }).join('')+'</tr>';
+ });
+ $('overlapMatrix').innerHTML=h;
+}
+
+function savePlan(){
+ if(!currentTrade.qty){toast('אין תוכנית מאושרת לשמירה');return}
+ positions.push({...currentTrade,status:'תוכנית',current:currentTrade.entry,id:Date.now()});
+ localStorage.setItem(storeKey+'_positions',JSON.stringify(positions));renderPositions();toast('התוכנית נשמרה');
+}
+function renderPositions(){
+ const body=$('positionsBody');body.innerHTML='';
+ $('positionsEmpty').classList.toggle('hide',positions.length>0);
+ positions.forEach((p,i)=>{
+   const dir=p.side==='long'?1:-1,current=+p.current||p.entry;
+   const gross=(current-p.entry)*dir*p.qty;
+   const comm=(+p.commission||.08)/100,fees=p.qty*(p.entry+current)*comm;
+   const net=gross-fees, r=p.netLoss?net/p.netLoss:0;
+   const breach=p.status!=='סגורה'&&p.stop>0&&((p.side==='long'&&current<=p.stop)||(p.side==='short'&&current>=p.stop));
+   body.innerHTML+=`<tr>
+    <td><span class="badge">${esc(p.status)}</span>${breach?' <span class="badge" style="background:var(--badBg);color:var(--bad)">סטופ נפרץ</span>':''}</td><td><b>${esc(p.sym)}</b></td><td>${p.side==='long'?'לונג':'שורט'}</td>
+    <td>${num(p.qty)}</td><td>${num(p.entry)}</td>
+    <td><input data-current="${i}" type="number" step=".01" value="${current}" style="min-width:90px;padding:6px"></td>
+    <td>${num(p.stop)}</td><td>${num(p.target)}</td>
+    <td class="${net>=0?'pos':'neg'}">${money(net)}</td><td>${r.toFixed(2)}R</td>
+    <td><button class="btn small soft" data-open="${i}">${p.status==='תוכנית'?'פתח':'סגור'}</button> <button class="btn small danger" data-del="${i}">מחק</button></td>
+   </tr>`;
+ });
+ $$('[data-current]').forEach(x=>x.onchange=()=>{positions[+x.dataset.current].current=+x.value;savePositions()});
+ $$('[data-open]').forEach(x=>x.onclick=()=>{const p=positions[+x.dataset.open];p.status=p.status==='תוכנית'?'פתוחה':'סגורה';savePositions()});
+ $$('[data-del]').forEach(x=>x.onclick=()=>{positions.splice(+x.dataset.del,1);savePositions()});
+}
+function savePositions(){localStorage.setItem(storeKey+'_positions',JSON.stringify(positions));renderPositions()}
+
+const todayTrades=[
+ {date:'2026-07-16',symbol:'TQQQ',qty:200,entry:74.4,exit:72.65,class:'trade',score:55,reason:'לונג נאסד״ק ממונף',lesson:'הפסילה צריכה להיות קרובה למבנה, לא לתחושת סיבולת',comm:.08},
+ {date:'2026-07-16',symbol:'SOXL',qty:108,entry:149.5,exit:144.88,class:'trade',score:52,reason:'ניסיון לונג בשבבים',lesson:'הפסד של 3.09% רחב ביחס לרווחים הקטנים בהמשך',comm:.08},
+ {date:'2026-07-16',symbol:'NOW',qty:280,entry:100.76,exit:100.5,class:'trade',score:58,reason:'ניסיון לונג תוכנה',lesson:'לא להוסיף תזה נוספת לאחר שני כישלונות ממונפים',comm:.08},
+ {date:'2026-07-16',symbol:'SOXL',qty:450,entry:149.25,exit:152.64,class:'trade',score:88,reason:'מבנה חדש וחוזק בשבבים',lesson:'לאחר החזרת היום לרווח, לעבור לחצי סיכון',comm:.08},
+ {date:'2026-07-16',symbol:'SPXL',qty:120,entry:277.3,exit:275.47,class:'trade',score:48,reason:'לונג שוק רחב ממונף',lesson:'חשיפה חופפת ללא יתרון עצמאי לעומת SOXL',comm:.08},
+ {date:'2026-07-16',symbol:'NOW',qty:320,entry:100.32,exit:99.84,class:'trade',score:47,reason:'ניסיון שני ב־NOW',lesson:'נדרש מבנה חדש ברור לפני חזרה לנייר',comm:.08},
+ {date:'2026-07-16',symbol:'TQQQ',qty:225,entry:72.75,exit:72.06,class:'trade',score:45,reason:'חזרה ללונג נאסד״ק',lesson:'אותה תזה כבר נכשלה',comm:.08},
+ {date:'2026-07-16',symbol:'TQQQ',qty:225,entry:72.75,exit:71.5,class:'trade',score:42,reason:'חלק שני של אותה פוזיציה',lesson:'לקבוע פסילה אחת לכל הפוזיציה',comm:.08},
+ {date:'2026-07-16',symbol:'NOWL',qty:3761,entry:4.52,exit:4.58,class:'trade',score:72,reason:'מומנטום קצר',lesson:'רווח תקין אך יש לבחון את שיעור העמלה מהרווח',comm:.08},
+ {date:'2026-07-16',symbol:'MSFL',qty:1961,entry:16.87,exit:16.96,class:'trade',score:70,reason:'מומנטום תוכנה',lesson:'העמלה אכלה חלק משמעותי מהרווח',comm:.08},
+ {date:'2026-07-16',symbol:'INTU',qty:113,entry:294.55,exit:294.92,class:'allocation',score:0,reason:'מעבר לחשיפה ממונפת',lesson:'שינוי הקצאה, לא עסקת מסחר',comm:.08},
+ {date:'2026-07-16',symbol:'NOW',qty:300,entry:104.3,exit:104.91,class:'trade',score:73,reason:'מבנה חדש ב־NOW',lesson:'ניסיון מאוחר הצליח, אך אינו מבטל את הצורך בהגבלת ניסיונות',comm:.08},
+ {date:'2026-07-16',symbol:'NOWL',qty:4500,entry:4.76,exit:4.8,class:'trade',score:71,reason:'מומנטום קצר',lesson:'לשמור על יעד שמצדיק עלויות',comm:.08},
+ {date:'2026-07-16',symbol:'SOXL',qty:368,entry:140.68,exit:142.11,class:'trade',score:82,reason:'מומנטום מחודש בשבבים',lesson:'היתרון של היום היה ממוקד ב־SOXL',comm:.08}
+];
+function calcJournalTrade(t){
+ const comm=(+t.comm||.08)/100,gross=(+t.exit-+t.entry)*(+t.qty),fees=(+t.entry+ +t.exit)*(+t.qty)*comm;
+ return {...t,gross,fees,net:gross-fees}
+}
+function renderJournal(){
+ const include=$('includeAlloc').checked;
+ const data=journal.map(calcJournalTrade),filtered=data.filter(t=>include||t.class!=='allocation');
+ $('journalBody').innerHTML=data.map((t,i)=>`<tr>
+  <td>${i+1}</td><td>${esc(t.date)}</td><td><b>${esc(t.symbol)}</b></td><td><span class="badge ${t.class==='allocation'?'alloc':'trade'}">${t.class==='allocation'?'הקצאה':'מסחר'}</span></td>
+  <td>${num(t.qty)}</td><td>${num(t.entry)}</td><td>${num(t.exit)}</td><td class="${t.gross>=0?'pos':'neg'}">${money(t.gross)}</td>
+  <td>${money(t.fees)}</td><td class="${t.net>=0?'pos':'neg'}">${money(t.net)}</td><td>${t.score||0}</td><td title="${esc(t.lesson)}">${esc(t.lesson||'')}</td>
+  <td><button class="btn small danger" data-jdel="${i}">מחק</button></td></tr>`).join('');
+ $('journalEmpty').classList.toggle('hide',data.length>0);
+ $$('[data-jdel]').forEach(b=>b.onclick=()=>{journal.splice(+b.dataset.jdel,1);saveJournal()});
+
+ const net=filtered.reduce((a,t)=>a+t.net,0),fees=filtered.reduce((a,t)=>a+t.fees,0);
+ const wins=filtered.filter(t=>t.net>0),losses=filtered.filter(t=>t.net<0);
+ const gp=wins.reduce((a,t)=>a+t.net,0),gl=Math.abs(losses.reduce((a,t)=>a+t.net,0));
+ const pf=gl?gp/gl:(gp?99:0),expect=filtered.length?net/filtered.length:0,win=filtered.length?wins.length/filtered.length*100:0;
+ let cum=0,peak=0,maxDD=0;filtered.forEach(t=>{cum+=t.net;peak=Math.max(peak,cum);maxDD=Math.max(maxDD,peak-cum)});
+ $('aNet').textContent=money(net);$('aNet').className=net>=0?'pos':'neg';$('aFees').textContent=money(fees);
+ $('aWin').textContent=pct(win);$('aPF').textContent=pf.toFixed(2);$('aExpect').textContent=money(expect);$('aDD').textContent=money(maxDD);
+ drawEquity(filtered);drawSymbols(filtered);
+}
+function saveJournal(){localStorage.setItem(storeKey+'_journal',JSON.stringify(journal));renderJournal()}
+function addJournal(){
+ const t={date:$('jDate').value,symbol:$('jSymbol').value.trim().toUpperCase(),qty:+$('jQty').value,entry:+$('jEntry').value,exit:+$('jExit').value,class:$('jClass').value,score:+$('jScore').value,reason:$('jReason').value.trim(),lesson:$('jLesson').value.trim(),comm:+$('jComm').value};
+ if(!t.symbol||!t.qty||!t.entry||!t.exit){toast('חסרים נתוני עסקה');return}
+ journal.push(t);saveJournal();$('jEntry').value='';$('jExit').value='';$('jLesson').value='';toast('העסקה נוספה');
+}
+
+function prepCanvas(c){
+ const dpr=window.devicePixelRatio||1,rect=c.getBoundingClientRect();c.width=Math.max(1,rect.width*dpr);c.height=Math.max(1,rect.height*dpr);
+ const ctx=c.getContext('2d');ctx.scale(dpr,dpr);return {ctx,w:rect.width,h:rect.height}
+}
+function colors(){
+ const s=getComputedStyle(document.documentElement);return {ink:s.getPropertyValue('--ink').trim(),muted:s.getPropertyValue('--muted').trim(),line:s.getPropertyValue('--line').trim(),primary:s.getPropertyValue('--primary2').trim(),good:s.getPropertyValue('--good').trim(),bad:s.getPropertyValue('--bad').trim()}
+}
+function drawEquity(data){
+ const c=$('equityCanvas'),{ctx,w,h}=prepCanvas(c),col=colors();ctx.clearRect(0,0,w,h);
+ const vals=[0];data.forEach(t=>vals.push(vals.at(-1)+t.net));
+ if(vals.length<2){ctx.fillStyle=col.muted;ctx.fillText('אין נתונים',20,30);return}
+ const min=Math.min(...vals,0),max=Math.max(...vals,0),pad=28,span=max-min||1;
+ const x=i=>pad+i*(w-pad*2)/(vals.length-1),y=v=>h-pad-(v-min)*(h-pad*2)/span;
+ ctx.strokeStyle=col.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,y(0));ctx.lineTo(w-pad,y(0));ctx.stroke();
+ ctx.strokeStyle=col.primary;ctx.lineWidth=2.5;ctx.beginPath();vals.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();
+ ctx.fillStyle=col.muted;ctx.font='11px Arial';ctx.fillText(money(max),4,16);ctx.fillText(money(min),4,h-7);
+ vals.forEach((v,i)=>{ctx.fillStyle=v>=0?col.good:col.bad;ctx.beginPath();ctx.arc(x(i),y(v),2.8,0,Math.PI*2);ctx.fill()})
+}
+function drawSymbols(data){
+ const c=$('symbolCanvas'),{ctx,w,h}=prepCanvas(c),col=colors();ctx.clearRect(0,0,w,h);
+ const map={};data.forEach(t=>map[t.symbol]=(map[t.symbol]||0)+t.net);
+ const arr=Object.entries(map).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,7);
+ if(!arr.length){ctx.fillStyle=col.muted;ctx.fillText('אין נתונים',20,30);return}
+ const max=Math.max(...arr.map(x=>Math.abs(x[1])),1),row=h/arr.length;
+ arr.forEach(([s,v],i)=>{
+   const y=i*row+row*.2,bh=row*.55,bw=(w-100)*Math.abs(v)/max;
+   ctx.fillStyle=v>=0?col.good:col.bad;ctx.fillRect(82,y,bw,bh);
+   ctx.fillStyle=col.ink;ctx.font='bold 12px Arial';ctx.fillText(s,8,y+bh*.75);
+   ctx.fillStyle=col.muted;ctx.font='11px Arial';ctx.fillText(money(v),86+bw,y+bh*.75);
+ })
+}
+
+function exportCsv(){
+ const rows=[['date','symbol','qty','entry','exit','class','score','reason','lesson','commission'],...journal.map(t=>[t.date,t.symbol,t.qty,t.entry,t.exit,t.class,t.score,t.reason,t.lesson,t.comm])];
+ const csv=rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='trade_review.csv';a.click();URL.revokeObjectURL(a.href)
+}
+function parseCsv(text){
+ const rows=[];let row=[],cell='',q=false;
+ for(let i=0;i<text.length;i++){const ch=text[i],n=text[i+1];
+  if(ch==='"'&&q&&n==='"'){cell+='"';i++}else if(ch==='"'){q=!q}else if(ch===','&&!q){row.push(cell);cell=''}else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&n==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=ch
+ }
+ if(cell||row.length){row.push(cell);rows.push(row)}
+ return rows
+}
+function importCsv(file){
+ const r=new FileReader();r.onload=()=>{
+  const rows=parseCsv(r.result),head=rows.shift().map(x=>x.trim().toLowerCase());
+  rows.forEach(a=>{const o={};head.forEach((h,i)=>o[h]=a[i]);journal.push({date:o.date,symbol:(o.symbol||'').toUpperCase(),qty:+o.qty,entry:+o.entry,exit:+o.exit,class:o.class||'trade',score:+o.score||0,reason:o.reason||'',lesson:o.lesson||'',comm:+o.commission||.08})});
+  saveJournal();toast('הקובץ יובא');
+ };r.readAsText(file,'utf-8')
+}
+
+/* ---- סנכרון מחירים חיים: אותו Cloudflare Worker שמשרת את Momentum Desk ---- */
+const WORKER_BASE='https://momentum-yahoo-prices.sh6doron.workers.dev/';
+let autoPricesOn=false,autoPricesTimer=null,liveLastPrice=null;
+async function fetchQuotes(symbols){
+ const syms=[...new Set(symbols.map(s=>String(s||'').trim().toUpperCase()).filter(Boolean))];
+ if(!syms.length)return{};
+ const r=await fetch(WORKER_BASE+'?symbols='+encodeURIComponent(syms.join(',')));
+ if(!r.ok)throw new Error('HTTP '+r.status);
+ return (await r.json()).quotes||{};
+}
+function quotePrice(q){return q?.extendedPrice??q?.price??q?.regularMarketPrice??null}
+function marketStateLabel(s){return s==='pre'?'טרום מסחר':s==='post'?'אחרי מסחר':s==='regular'?'מסחר רציף':'שוק סגור'}
+async function refreshLiveQuote(){
+ const sym=$('tSymbol').value.trim().toUpperCase();
+ if(!sym){$('liveQuote').textContent='הזן סימול כדי למשוך מחיר';liveLastPrice=null;return}
+ $('liveQuote').textContent='טוען את '+sym+'…';
+ try{
+  const q=(await fetchQuotes([sym]))[sym],p=quotePrice(q);
+  if(!p){$('liveQuote').textContent='אין נתון עבור '+sym;liveLastPrice=null;return}
+  liveLastPrice=p;
+  const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
+  $('liveQuote').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+ }catch(e){$('liveQuote').textContent='שגיאה במשיכת נתונים';liveLastPrice=null}
+}
+async function refreshPositionPrices(silent){
+ if(!positions.length){if(!silent)toast('אין פוזיציות לרענון');return}
+ try{
+  const quotes=await fetchQuotes(positions.map(p=>p.sym));
+  let n=0;
+  positions.forEach(p=>{const v=quotePrice(quotes[p.sym]);if(v){p.current=v;n++}});
+  savePositions();
+  $('pricesStamp').textContent=`המחירים עודכנו מהשוק ב־${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} (${n} מתוך ${positions.length} סימולים)`;
+ }catch(e){if(!silent)toast('שגיאה ברענון מחירים');}
+}
+function toggleAutoPrices(){
+ autoPricesOn=!autoPricesOn;
+ $('autoPricesBtn').textContent='אוטומטי: '+(autoPricesOn?'פועל':'כבוי');
+ $('autoPricesBtn').classList.toggle('primary',autoPricesOn);
+ clearInterval(autoPricesTimer);
+ if(autoPricesOn){refreshPositionPrices(true);autoPricesTimer=setInterval(()=>refreshPositionPrices(true),30000)}
+}
+
+function copyPlan(){
+ const t=currentTrade;
+ const text=`תוכנית עסקה
+סימול: ${t.sym}
+כיוון: ${t.side==='long'?'לונג':'שורט'}
+כניסה: ${t.entry}
+פסילה: ${t.stop}
+יעד ראשון: ${t.t1}
+יעד שני: ${t.t2}
+כמות מאושרת: ${t.qty}
+סיכון נטו: ${money(t.netLoss)}
+יחס נטו: ${t.rr?.toFixed(2)}
+ציון: ${t.score}
+החלטה: ${t.decision}`;
+ navigator.clipboard?.writeText(text).then(()=>toast('התוכנית הועתקה')).catch(()=>toast('לא ניתן להעתיק'));
+}
+function saveAll(){
+ const state={session:['sPnl','sPeak','sLossStreak','sAttempts','sOpenRisk','sTrades','sMarket','sNewStructure','sRecovered','sSameThesis','sEmotional','sNewsRisk'].reduce((o,id)=>(o[id]=$(id).type==='checkbox'?$(id).checked:$(id).value,o),{}),
+ trade:['tSymbol','tSide','tFamily','tType','tEntry','tStop','tTarget1','tTarget2','tTarget1Share','tCapitalPct','tCommission','tSlippage','qMarket','qSector','qEntry','qVolume','qCatalyst','qInvalidation','bFomo','bRevenge','bLate','bMoveStop','bThesisFailed','bClearPlan','customExposure'].reduce((o,id)=>(o[id]=$(id).type==='checkbox'?$(id).checked:$(id).value,o),{}),
+ exposures:[...exposureSelected]
+ };
+ localStorage.setItem(storeKey+'_state',JSON.stringify(state));toast('המצב נשמר');
+}
+function restore(){
+ const state=JSON.parse(localStorage.getItem(storeKey+'_state')||'null');if(!state)return;
+ Object.entries({...state.session,...state.trade}).forEach(([id,v])=>{if($(id))$(id).type==='checkbox'?$(id).checked=v:$(id).value=v});
+ exposureSelected=new Set(state.exposures||[]);
+}
+function applySettingsToInputs(){
+ $('setAccount').value=settings.account;$('setBaseRisk').value=settings.baseRisk;$('setMaxLoss').value=settings.maxLoss;$('setMaxGiveback').value=settings.maxGiveback;
+ $('setMaxTrades').value=settings.maxTrades;$('setOpenRiskMult').value=settings.openRiskMult;$('setFullScore').value=settings.fullScore;$('setHalfScore').value=settings.halfScore;$('setMinRR').value=settings.minRR;
+}
+function updateSettings(){
+ settings={account:+$('setAccount').value,baseRisk:+$('setBaseRisk').value,maxLoss:+$('setMaxLoss').value,maxGiveback:+$('setMaxGiveback').value,maxTrades:+$('setMaxTrades').value,openRiskMult:+$('setOpenRiskMult').value,fullScore:+$('setFullScore').value,halfScore:+$('setHalfScore').value,minRR:+$('setMinRR').value};
+ localStorage.setItem(storeKey+'_settings',JSON.stringify(settings));sessionEngine();toast('ההגדרות עודכנו');
+}
+function loadTodaySession(){
+ $('sPnl').value=466.56;$('sPeak').value=466.56;$('sLossStreak').value=0;$('sAttempts').value=3;$('sOpenRisk').value=0;$('sTrades').value=13;
+ $('sMarket').value='-1';$('sNewStructure').value='2';$('sRecovered').checked=true;$('sSameThesis').checked=true;$('sEmotional').checked=false;sessionEngine();toast('דוגמת היום נטענה');
+}
+function resetAll(){
+ if(!confirm('לאפס את מצב המערכת? היומן והפוזיציות לא יימחקו.'))return;
+ localStorage.removeItem(storeKey+'_state');location.reload()
+}
+function bind(){
+ $$('.tab').forEach(b=>b.onclick=()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));$$('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');$(b.dataset.tab).classList.add('active');setTimeout(()=>{renderJournal()},50)
+ });
+ const sessionIds=['sPnl','sPeak','sLossStreak','sAttempts','sOpenRisk','sTrades','sMarket','sNewStructure','sRecovered','sSameThesis','sEmotional','sNewsRisk'];
+ sessionIds.forEach(id=>$(id).addEventListener('input',sessionEngine));
+ const tradeIds=['tSymbol','tSide','tFamily','tType','tEntry','tStop','tTarget1','tTarget2','tTarget1Share','tCapitalPct','tCommission','tSlippage','qMarket','qSector','qEntry','qVolume','qCatalyst','qInvalidation','bFomo','bRevenge','bLate','bMoveStop','bThesisFailed','bClearPlan','customExposure'];
+ tradeIds.forEach(id=>$(id).addEventListener('input',()=>{if(id.startsWith('q'))$(id+'V').textContent=$(id).value;tradeEngine()}));
+ $('savePlanBtn').onclick=savePlan;$('copyPlanBtn').onclick=copyPlan;$('clearPositionsBtn').onclick=()=>{if(confirm('למחוק את כל הפוזיציות והתוכניות?')){positions=[];savePositions()}};
+ $('addJournalBtn').onclick=addJournal;$('loadJournalToday').onclick=()=>{journal=structuredClone(todayTrades);saveJournal();toast('פעולות היום נטענו')};
+ $('clearJournal').onclick=()=>{if(confirm('למחוק את היומן?')){journal=[];saveJournal()}};
+ $('exportJournal').onclick=exportCsv;$('importJournal').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);$('includeAlloc').onchange=renderJournal;
+ $('applySettings').onclick=updateSettings;$('loadTodayBtn').onclick=loadTodaySession;$('saveAllBtn').onclick=saveAll;$('resetBtn').onclick=resetAll;
+ $('liveRefreshBtn').onclick=refreshLiveQuote;
+ $('liveToEntryBtn').onclick=()=>{if(liveLastPrice){$('tEntry').value=liveLastPrice;tradeEngine();toast('מחיר הכניסה עודכן למחיר החי')}else toast('משוך מחיר תחילה')};
+ let liveDebounce;$('tSymbol').addEventListener('input',()=>{clearTimeout(liveDebounce);liveDebounce=setTimeout(refreshLiveQuote,900)});
+ $('refreshPricesBtn').onclick=()=>refreshPositionPrices(false);
+ $('autoPricesBtn').onclick=toggleAutoPrices;
+ $('themeBtn').onclick=()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'light':'dark';localStorage.setItem(storeKey+'_theme',dark?'light':'dark');renderJournal()};
+}
+function init(){
+ /* ערכת נושא: קודם ההעדפה המקומית, אחרת יורשים את הערכה של Momentum Desk (אותו דומיין) */
+ const deskTheme=localStorage.getItem('momentum_desk_theme_v20');
+ document.documentElement.dataset.theme=localStorage.getItem(storeKey+'_theme')||(deskTheme==='dark'||deskTheme==='light'?deskTheme:'light');
+ restore();applySettingsToInputs();renderExposureChips();bind();renderPositions();
+ $('jDate').value=new Date().toISOString().slice(0,10);
+ /* קליטת סימול מ־Momentum Desk: ?symbol=SOXL פותח את מסך העסקה עם הסימול */
+ const urlSym=(new URLSearchParams(location.search).get('symbol')||'').trim().toUpperCase();
+ if(urlSym){$('tSymbol').value=urlSym;document.querySelector('[data-tab="trade-panel"]')?.click()}
+ sessionEngine();renderJournal();
+ refreshLiveQuote();
+ window.addEventListener('resize',()=>renderJournal());
+}
+init();
+</script>
+</body>
+</html>
