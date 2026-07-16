@@ -876,6 +876,7 @@ async function fetchQuotes(symbols){
 }
 function quotePrice(q){return q?.extendedPrice??q?.price??q?.regularMarketPrice??null}
 function marketStateLabel(s){return s==='pre'?'טרום מסחר':s==='post'?'אחרי מסחר':s==='regular'?'מסחר רציף':'שוק סגור'}
+let liveFilledSym=null;
 async function refreshLiveQuote(){
  const sym=$('tSymbol').value.trim().toUpperCase();
  if(!sym){$('liveQuote').textContent='הזן סימול כדי למשוך מחיר';liveLastPrice=null;return}
@@ -886,6 +887,16 @@ async function refreshLiveQuote(){
   liveLastPrice=p;
   const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
   $('liveQuote').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  /* סימול חדש: הכניסה מתעדכנת אוטומטית למחיר החי, והסטופ והיעדים נשמרים באותם מרחקים באחוזים */
+  if(sym!==liveFilledSym||!(+$('tEntry').value)){
+   const oldEntry=+$('tEntry').value||0;
+   if(oldEntry&&p!==oldEntry){
+    const ratio=p/oldEntry;
+    ['tStop','tTarget1','tTarget2'].forEach(id=>{const v=+$(id).value||0;if(v)$(id).value=+(v*ratio).toFixed(2)});
+   }
+   $('tEntry').value=p;liveFilledSym=sym;tradeEngine();
+   toast('הכניסה עודכנה למחיר החי, הסטופ והיעדים הותאמו');
+  }
  }catch(e){$('liveQuote').textContent='שגיאה במשיכת נתונים';liveLastPrice=null}
 }
 async function refreshPositionPrices(silent){
@@ -907,7 +918,7 @@ function toggleAutoPrices(){
 }
 
 /* ---- מסך עסקה מהירה: סימול + סטופ בלבד, כל השאר אוטומטי ---- */
-let quickPlan=null,quickBusy=false;
+let quickPlan=null,quickBusy=false,kFilledSym=null;
 function refreshQuickQuote(){
  const sym=$('kSymbol').value.trim().toUpperCase();
  if(!sym){$('kLive').textContent='הקלד סימול — המחיר נמשך אוטומטית.';return}
@@ -917,6 +928,8 @@ function refreshQuickQuote(){
   if(!p){$('kLive').textContent='אין נתון עבור '+sym;return}
   const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
   $('kLive').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  /* סימול חדש: הסטופ והיעד של הסימול הקודם לא רלוונטיים */
+  if(sym!==kFilledSym){$('kStop').value='';$('kTarget').value='';kFilledSym=sym}
   $('kEntry').value=p;quickEngine();
  }).catch(()=>{$('kLive').textContent='שגיאה במשיכת נתונים — אפשר להזין כניסה ידנית';});
 }
