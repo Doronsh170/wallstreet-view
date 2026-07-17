@@ -171,12 +171,9 @@ canvas{width:100%;height:100%}
 
 <main class="shell">
   <nav class="tabs no-print">
-    <button class="tab active" data-tab="quick-panel">עסקה מהירה</button>
-    <button class="tab" data-tab="session-panel">חדר מצב</button>
+    <button class="tab active" data-tab="quick-panel">מסחר</button>
     <button class="tab" data-tab="trade-panel">תכנון מלא</button>
-    <button class="tab" data-tab="positions-panel">פוזיציות</button>
-    <button class="tab" data-tab="review-panel">תחקיר וסטטיסטיקה</button>
-    <button class="tab" data-tab="rules-panel">ספר חוקים</button>
+    <button class="tab" data-tab="review-panel">יומן ותחקיר</button>
     <button class="tab" data-tab="settings-panel">הגדרות</button>
   </nav>
 
@@ -224,12 +221,15 @@ canvas{width:100%;height:100%}
           <button class="btn soft" id="kFullBtn">תכנון מלא</button>
         </div>
       </article>
-    </div>
-  </section>
 
-  <section id="session-panel" class="panel">
-    <div class="grid">
-      <article class="card span-8">
+      <article class="card">
+        <div class="card-head" style="margin-bottom:0">
+          <div><h3>מצב היום ומושל הסיכון</h3><div class="sub" id="daySummary">ממתין לנתונים</div></div>
+          <button class="btn small soft no-print" id="dayToggleBtn">פתח</button>
+        </div>
+      </article>
+
+      <article class="card span-8 dayCard hide">
         <div class="card-head">
           <div><h2>מצב המסחר היום</h2><div class="sub">מנוע הסיכון קובע אם מותר להיכנס, ובאיזה היקף.</div></div>
           <button class="btn small soft no-print" id="loadTodayBtn">טען את יום 16.7 כדוגמה</button>
@@ -252,7 +252,7 @@ canvas{width:100%;height:100%}
         </div>
       </article>
 
-      <article class="card span-4">
+      <article class="card span-4 dayCard hide">
         <div class="card-head"><div><h2>מושל הסיכון</h2><div class="sub">החלטה אוטומטית לפי מצב היום.</div></div></div>
         <div class="kpis">
           <div class="kpi"><span>סיכון בסיס</span><strong id="gBase">$400</strong></div>
@@ -266,7 +266,7 @@ canvas{width:100%;height:100%}
         <div id="sessionReasons" class="reasons"></div>
       </article>
 
-      <article class="card">
+      <article class="card dayCard hide">
         <div class="card-head"><div><h2>רצפת הגנה יומית</h2><div class="sub">המערכת עוצרת לא רק בהפסד מרבי, אלא גם כאשר מוחקים רווח שכבר הושג.</div></div></div>
         <div class="kpis six">
           <div class="kpi"><span>הפסד יומי מרבי</span><strong id="floorMaxLoss">$1,200</strong></div>
@@ -276,6 +276,25 @@ canvas{width:100%;height:100%}
           <div class="kpi"><span>מקסימום סיכון פתוח</span><strong id="floorOpenRisk">$800</strong></div>
           <div class="kpi"><span>סטטוס</span><strong id="floorStatus">תקין</strong></div>
         </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div><h2>תוכניות ופוזיציות פתוחות</h2><div class="sub">המחיר הנוכחי נמשך אוטומטית מהשוק, או מוזן ידנית. רווח, הפסד, R ופריצת סטופ מתעדכנים בהתאם.</div></div>
+          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn small soft" id="refreshPricesBtn">רענן מחירים</button>
+            <button class="btn small" id="autoPricesBtn">אוטומטי: כבוי</button>
+            <button class="btn small danger" id="clearPositionsBtn">נקה הכול</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>סטטוס</th><th>סימול</th><th>כיוון</th><th>כמות</th><th>כניסה</th><th>מחיר נוכחי</th><th>פסילה</th><th>יעד</th><th>נטו משוער</th><th>R</th><th>פעולות</th></tr></thead>
+            <tbody id="positionsBody"></tbody>
+          </table>
+        </div>
+        <div id="positionsEmpty" class="alert info">עדיין לא נשמרה תוכנית — תכנן עסקה למעלה ולחץ „שמור לפוזיציות”.</div>
+        <div id="pricesStamp" class="sub" style="margin-top:8px"></div>
       </article>
     </div>
   </section>
@@ -383,29 +402,6 @@ canvas{width:100%;height:100%}
     </div>
   </section>
 
-  <section id="positions-panel" class="panel">
-    <div class="grid">
-      <article class="card">
-        <div class="card-head">
-          <div><h2>תוכניות ופוזיציות פתוחות</h2><div class="sub">המחיר הנוכחי נמשך אוטומטית מהשוק, או מוזן ידנית. רווח, הפסד, R ופריצת סטופ מתעדכנים בהתאם.</div></div>
-          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
-            <button class="btn small soft" id="refreshPricesBtn">רענן מחירים</button>
-            <button class="btn small" id="autoPricesBtn">אוטומטי: כבוי</button>
-            <button class="btn small danger" id="clearPositionsBtn">נקה הכול</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>סטטוס</th><th>סימול</th><th>כיוון</th><th>כמות</th><th>כניסה</th><th>מחיר נוכחי</th><th>פסילה</th><th>יעד</th><th>נטו משוער</th><th>R</th><th>פעולות</th></tr></thead>
-            <tbody id="positionsBody"></tbody>
-          </table>
-        </div>
-        <div id="positionsEmpty" class="alert info">עדיין לא נשמרה תוכנית. עבור ללשונית „עסקה חדשה”.</div>
-        <div id="pricesStamp" class="sub" style="margin-top:8px"></div>
-      </article>
-    </div>
-  </section>
-
   <section id="review-panel" class="panel">
     <div class="grid">
       <article class="card">
@@ -468,11 +464,7 @@ canvas{width:100%;height:100%}
         </div>
         <div id="journalEmpty" class="alert info">אין עסקאות ביומן.</div>
       </article>
-    </div>
-  </section>
 
-  <section id="rules-panel" class="panel">
-    <div class="grid">
       <article class="card">
         <div class="card-head"><div><h2>ספר החוקים האישי</h2><div class="sub">חוקים הנגזרים מהאופן שבו פעלת ב־16.7.</div></div></div>
         <div class="rule-list">
@@ -607,6 +599,7 @@ function sessionEngine(){
  $('floorRecovered').textContent=money(Math.max(0,peak-settings.maxGiveback));
  $('floorTrades').textContent=settings.maxTrades;$('floorOpenRisk').textContent=money(maxOpen);
  $('floorStatus').textContent=blocked?'נעול':'תקין';$('floorStatus').className=blocked?'neg':'pos';
+ $('daySummary').textContent=`${permission} · סיכון מותר ${money(allowed)} · ${trades} עסקאות היום · רו״ה ${money(pnl)}`;
  window.sessionResult={allowed,blocked,permission,kind,giveback,market,newStructure,recovered,same,attempts,streak};
  tradeEngine();
  quickEngine();
@@ -981,6 +974,13 @@ function quickEngine(){
  tradeEngine();
  }finally{quickBusy=false}
 }
+function toggleDay(open,scroll){
+ const cards=$$('.dayCard');
+ const show=open!==undefined?open:cards[0].classList.contains('hide');
+ cards.forEach(c=>c.classList.toggle('hide',!show));
+ $('dayToggleBtn').textContent=show?'סגור':'פתח';
+ if(show&&scroll)cards[0].scrollIntoView({behavior:'smooth',block:'start'});
+}
 function saveQuick(){
  if(!quickPlan||!quickPlan.qty){toast('אין עסקה מאושרת לשמירה');return}
  positions.push({...quickPlan,status:'תוכנית',current:quickPlan.entry,id:Date.now()});
@@ -1051,7 +1051,8 @@ function bind(){
  $('kPullBtn').onclick=refreshQuickQuote;
  $('kSaveBtn').onclick=saveQuick;
  $('kFullBtn').onclick=()=>{quickEngine();document.querySelector('[data-tab="trade-panel"]').click()};
- $('kDayBtn').onclick=()=>document.querySelector('[data-tab="session-panel"]').click();
+ $('dayToggleBtn').onclick=()=>toggleDay();
+ $('kDayBtn').onclick=()=>toggleDay(true,true);
  $$('[data-kstop]').forEach(b=>b.onclick=()=>{
   const e=+$('kEntry').value||0;
   if(!e){toast('אין מחיר כניסה — משוך מחיר או הזן ידנית');return}
