@@ -869,6 +869,20 @@ async function fetchQuotes(symbols){
 }
 function quotePrice(q){return q?.extendedPrice??q?.price??q?.regularMarketPrice??null}
 function marketStateLabel(s){return s==='pre'?'טרום מסחר':s==='post'?'אחרי מסחר':s==='regular'?'מסחר רציף':'שוק סגור'}
+function changeSpan(v){return v==null?'':`<span class="${v>=0?'pos':'neg'}">${v>=0?'+':''}${v.toFixed(2)}%</span>`}
+/* בטרום/אחרי מסחר: השינוי מחושב מול הסגירה הרגילה האחרונה (regularMarketPrice) ולא מול previousClose,
+   כדי שלא יצטרפו יחד שינוי היום האחרון ושינוי הסשן המורחב. שינוי היום האחרון מוצג בנפרד. */
+function quoteLineHtml(sym,q,p){
+ const fin=v=>Number.isFinite(v)&&v>0?v:null;
+ const reg=fin(q?.regularMarketPrice),prev=fin(q?.previousClose),st=q?.marketState;
+ if(st==='pre'||st==='post'){
+  const ext=reg?(p-reg)/reg*100:null,day=reg&&prev?(reg-prev)/prev*100:null;
+  const dayLabel=st==='pre'?'היום האחרון':'המסחר הרציף';
+  return `<b>${esc(sym)}</b> ${num(p)} ${changeSpan(ext)} ${marketStateLabel(st)}${day!=null?` · ${dayLabel}: ${changeSpan(day)}`:''}`;
+ }
+ const chg=prev?(p-prev)/prev*100:null;
+ return `<b>${esc(sym)}</b> ${num(p)}${chg!=null?' '+changeSpan(chg):''} · ${marketStateLabel(st)}`;
+}
 let liveFilledSym=null;
 async function refreshLiveQuote(){
  const sym=$('tSymbol').value.trim().toUpperCase();
@@ -878,8 +892,7 @@ async function refreshLiveQuote(){
   const q=(await fetchQuotes([sym]))[sym],p=quotePrice(q);
   if(!p){$('liveQuote').textContent='אין נתון עבור '+sym;liveLastPrice=null;return}
   liveLastPrice=p;
-  const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
-  $('liveQuote').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  $('liveQuote').innerHTML=quoteLineHtml(sym,q,p);
   /* סימול חדש: הכניסה מתעדכנת אוטומטית למחיר החי, והסטופ והיעדים נשמרים באותם מרחקים באחוזים */
   if(sym!==liveFilledSym||!(+$('tEntry').value)){
    const oldEntry=+$('tEntry').value||0;
@@ -919,8 +932,7 @@ function refreshQuickQuote(){
  fetchQuotes([sym]).then(qs=>{
   const q=qs[sym],p=quotePrice(q);
   if(!p){$('kLive').textContent='אין נתון עבור '+sym;return}
-  const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
-  $('kLive').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  $('kLive').innerHTML=quoteLineHtml(sym,q,p);
   /* סימול חדש: הסטופ והיעד של הסימול הקודם לא רלוונטיים */
   if(sym!==kFilledSym){$('kStop').value='';$('kTarget').value='';kFilledSym=sym}
   $('kEntry').value=p;quickEngine();
