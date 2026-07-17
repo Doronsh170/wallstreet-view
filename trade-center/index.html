@@ -171,17 +171,65 @@ canvas{width:100%;height:100%}
 
 <main class="shell">
   <nav class="tabs no-print">
-    <button class="tab active" data-tab="session-panel">חדר מצב</button>
-    <button class="tab" data-tab="trade-panel">עסקה חדשה</button>
-    <button class="tab" data-tab="positions-panel">פוזיציות</button>
-    <button class="tab" data-tab="review-panel">תחקיר וסטטיסטיקה</button>
-    <button class="tab" data-tab="rules-panel">ספר חוקים</button>
+    <button class="tab active" data-tab="quick-panel">מסחר</button>
+    <button class="tab" data-tab="trade-panel">תכנון מלא</button>
+    <button class="tab" data-tab="review-panel">יומן ותחקיר</button>
     <button class="tab" data-tab="settings-panel">הגדרות</button>
   </nav>
 
-  <section id="session-panel" class="panel active">
+  <section id="quick-panel" class="panel active">
     <div class="grid">
-      <article class="card span-8">
+      <article class="card span-7">
+        <div class="card-head">
+          <div><h2>עסקה מהירה</h2><div class="sub">סימול וסטופ — המחיר נמשך מהשוק, והמערכת עונה: כמה, באיזה סיכון, ומותר או לא.</div></div>
+          <button class="btn small soft no-print" id="kPullBtn">משוך מחיר חי</button>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>סימול</label><input id="kSymbol" placeholder="SOXL" autocapitalize="characters" autocomplete="off"></div>
+          <div class="field"><label>כיוון</label><select id="kSide"><option value="long">לונג</option><option value="short">שורט</option></select></div>
+          <div class="field"><label>כניסה <span class="help" title="מתמלא אוטומטית מהמחיר החי, אפשר לדרוס ידנית">?</span></label><input id="kEntry" type="number" step="0.01" placeholder="נמשך מהשוק"></div>
+          <div class="field"><label>סטופ</label><input id="kStop" type="number" step="0.01" placeholder="נקודת פסילה"></div>
+          <div class="field"><label>יעד <span class="help" title="ריק = יעד אוטומטי של 2R">?</span></label><input id="kTarget" type="number" step="0.01" placeholder="ריק = 2R"></div>
+        </div>
+        <div id="kLive" class="sub" style="margin-top:9px">הקלד סימול — המחיר נמשך אוטומטית.</div>
+        <div class="exposure-list no-print" style="margin-top:10px">
+          <span class="sub" style="align-self:center">סטופ מהיר מהכניסה:</span>
+          <button class="chip" data-kstop="0.5">0.5%</button>
+          <button class="chip" data-kstop="1">1%</button>
+          <button class="chip" data-kstop="1.5">1.5%</button>
+          <button class="chip" data-kstop="2">2%</button>
+        </div>
+        <div class="kpis" style="margin-top:14px">
+          <div class="kpi"><span>הרשאת מסחר</span><strong id="kPermission">—</strong></div>
+          <div class="kpi"><span>סיכון מותר לעסקה</span><strong id="kAllowed">$0</strong></div>
+          <div class="kpi"><span>עסקאות היום</span><strong id="kTrades">0</strong></div>
+          <div class="kpi"><span style="visibility:hidden">מצב יום</span><button class="btn small soft no-print" id="kDayBtn" style="width:100%">עדכן חדר מצב</button></div>
+        </div>
+      </article>
+
+      <article class="card span-5">
+        <div id="kDecision" class="decision info"><div class="label">החלטת מערכת</div><strong>ממתין</strong><p>הזן סימול וסטופ.</p></div>
+        <div class="kpis" style="margin-top:12px">
+          <div class="kpi"><span>כמות</span><strong id="kQty">0</strong></div>
+          <div class="kpi"><span>סיכון בסטופ</span><strong id="kRisk">$0</strong></div>
+          <div class="kpi"><span>יחס נטו</span><strong id="kRR">0.00</strong></div>
+          <div class="kpi"><span>שווי פוזיציה</span><strong id="kPos">$0</strong></div>
+        </div>
+        <div id="kReasons" class="reasons"></div>
+        <div class="no-print" style="display:flex;gap:8px;margin-top:13px">
+          <button class="btn primary" id="kSaveBtn" style="flex:1">שמור לפוזיציות</button>
+          <button class="btn soft" id="kFullBtn">תכנון מלא</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head" style="margin-bottom:0">
+          <div><h3>מצב היום ומושל הסיכון</h3><div class="sub" id="daySummary">ממתין לנתונים</div></div>
+          <button class="btn small soft no-print" id="dayToggleBtn">פתח</button>
+        </div>
+      </article>
+
+      <article class="card span-8 dayCard hide">
         <div class="card-head">
           <div><h2>מצב המסחר היום</h2><div class="sub">מנוע הסיכון קובע אם מותר להיכנס, ובאיזה היקף.</div></div>
           <button class="btn small soft no-print" id="loadTodayBtn">טען את יום 16.7 כדוגמה</button>
@@ -204,7 +252,7 @@ canvas{width:100%;height:100%}
         </div>
       </article>
 
-      <article class="card span-4">
+      <article class="card span-4 dayCard hide">
         <div class="card-head"><div><h2>מושל הסיכון</h2><div class="sub">החלטה אוטומטית לפי מצב היום.</div></div></div>
         <div class="kpis">
           <div class="kpi"><span>סיכון בסיס</span><strong id="gBase">$400</strong></div>
@@ -218,7 +266,7 @@ canvas{width:100%;height:100%}
         <div id="sessionReasons" class="reasons"></div>
       </article>
 
-      <article class="card">
+      <article class="card dayCard hide">
         <div class="card-head"><div><h2>רצפת הגנה יומית</h2><div class="sub">המערכת עוצרת לא רק בהפסד מרבי, אלא גם כאשר מוחקים רווח שכבר הושג.</div></div></div>
         <div class="kpis six">
           <div class="kpi"><span>הפסד יומי מרבי</span><strong id="floorMaxLoss">$1,200</strong></div>
@@ -228,6 +276,25 @@ canvas{width:100%;height:100%}
           <div class="kpi"><span>מקסימום סיכון פתוח</span><strong id="floorOpenRisk">$800</strong></div>
           <div class="kpi"><span>סטטוס</span><strong id="floorStatus">תקין</strong></div>
         </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div><h2>תוכניות ופוזיציות פתוחות</h2><div class="sub">המחיר הנוכחי נמשך אוטומטית מהשוק, או מוזן ידנית. רווח, הפסד, R ופריצת סטופ מתעדכנים בהתאם.</div></div>
+          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn small soft" id="refreshPricesBtn">רענן מחירים</button>
+            <button class="btn small" id="autoPricesBtn">אוטומטי: כבוי</button>
+            <button class="btn small danger" id="clearPositionsBtn">נקה הכול</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>סטטוס</th><th>סימול</th><th>כיוון</th><th>כמות</th><th>כניסה</th><th>מחיר נוכחי</th><th>פסילה</th><th>יעד</th><th>נטו משוער</th><th>R</th><th>פעולות</th></tr></thead>
+            <tbody id="positionsBody"></tbody>
+          </table>
+        </div>
+        <div id="positionsEmpty" class="alert info">עדיין לא נשמרה תוכנית — תכנן עסקה למעלה ולחץ „שמור לפוזיציות”.</div>
+        <div id="pricesStamp" class="sub" style="margin-top:8px"></div>
       </article>
     </div>
   </section>
@@ -335,29 +402,6 @@ canvas{width:100%;height:100%}
     </div>
   </section>
 
-  <section id="positions-panel" class="panel">
-    <div class="grid">
-      <article class="card">
-        <div class="card-head">
-          <div><h2>תוכניות ופוזיציות פתוחות</h2><div class="sub">המחיר הנוכחי נמשך אוטומטית מהשוק, או מוזן ידנית. רווח, הפסד, R ופריצת סטופ מתעדכנים בהתאם.</div></div>
-          <div class="no-print" style="display:flex;gap:7px;flex-wrap:wrap">
-            <button class="btn small soft" id="refreshPricesBtn">רענן מחירים</button>
-            <button class="btn small" id="autoPricesBtn">אוטומטי: כבוי</button>
-            <button class="btn small danger" id="clearPositionsBtn">נקה הכול</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>סטטוס</th><th>סימול</th><th>כיוון</th><th>כמות</th><th>כניסה</th><th>מחיר נוכחי</th><th>פסילה</th><th>יעד</th><th>נטו משוער</th><th>R</th><th>פעולות</th></tr></thead>
-            <tbody id="positionsBody"></tbody>
-          </table>
-        </div>
-        <div id="positionsEmpty" class="alert info">עדיין לא נשמרה תוכנית. עבור ללשונית „עסקה חדשה”.</div>
-        <div id="pricesStamp" class="sub" style="margin-top:8px"></div>
-      </article>
-    </div>
-  </section>
-
   <section id="review-panel" class="panel">
     <div class="grid">
       <article class="card">
@@ -420,11 +464,7 @@ canvas{width:100%;height:100%}
         </div>
         <div id="journalEmpty" class="alert info">אין עסקאות ביומן.</div>
       </article>
-    </div>
-  </section>
 
-  <section id="rules-panel" class="panel">
-    <div class="grid">
       <article class="card">
         <div class="card-head"><div><h2>ספר החוקים האישי</h2><div class="sub">חוקים הנגזרים מהאופן שבו פעלת ב־16.7.</div></div></div>
         <div class="rule-list">
@@ -559,8 +599,10 @@ function sessionEngine(){
  $('floorRecovered').textContent=money(Math.max(0,peak-settings.maxGiveback));
  $('floorTrades').textContent=settings.maxTrades;$('floorOpenRisk').textContent=money(maxOpen);
  $('floorStatus').textContent=blocked?'נעול':'תקין';$('floorStatus').className=blocked?'neg':'pos';
+ $('daySummary').textContent=`${permission} · סיכון מותר ${money(allowed)} · ${trades} עסקאות היום · רו״ה ${money(pnl)}`;
  window.sessionResult={allowed,blocked,permission,kind,giveback,market,newStructure,recovered,same,attempts,streak};
  tradeEngine();
+ quickEngine();
 }
 
 function tradeMath(){
@@ -827,6 +869,7 @@ async function fetchQuotes(symbols){
 }
 function quotePrice(q){return q?.extendedPrice??q?.price??q?.regularMarketPrice??null}
 function marketStateLabel(s){return s==='pre'?'טרום מסחר':s==='post'?'אחרי מסחר':s==='regular'?'מסחר רציף':'שוק סגור'}
+let liveFilledSym=null;
 async function refreshLiveQuote(){
  const sym=$('tSymbol').value.trim().toUpperCase();
  if(!sym){$('liveQuote').textContent='הזן סימול כדי למשוך מחיר';liveLastPrice=null;return}
@@ -837,6 +880,16 @@ async function refreshLiveQuote(){
   liveLastPrice=p;
   const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
   $('liveQuote').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  /* סימול חדש: הכניסה מתעדכנת אוטומטית למחיר החי, והסטופ והיעדים נשמרים באותם מרחקים באחוזים */
+  if(sym!==liveFilledSym||!(+$('tEntry').value)){
+   const oldEntry=+$('tEntry').value||0;
+   if(oldEntry&&p!==oldEntry){
+    const ratio=p/oldEntry;
+    ['tStop','tTarget1','tTarget2'].forEach(id=>{const v=+$(id).value||0;if(v)$(id).value=+(v*ratio).toFixed(2)});
+   }
+   $('tEntry').value=p;liveFilledSym=sym;tradeEngine();
+   toast('הכניסה עודכנה למחיר החי, הסטופ והיעדים הותאמו');
+  }
  }catch(e){$('liveQuote').textContent='שגיאה במשיכת נתונים';liveLastPrice=null}
 }
 async function refreshPositionPrices(silent){
@@ -855,6 +908,84 @@ function toggleAutoPrices(){
  $('autoPricesBtn').classList.toggle('primary',autoPricesOn);
  clearInterval(autoPricesTimer);
  if(autoPricesOn){refreshPositionPrices(true);autoPricesTimer=setInterval(()=>refreshPositionPrices(true),30000)}
+}
+
+/* ---- מסך עסקה מהירה: סימול + סטופ בלבד, כל השאר אוטומטי ---- */
+let quickPlan=null,quickBusy=false,kFilledSym=null;
+function refreshQuickQuote(){
+ const sym=$('kSymbol').value.trim().toUpperCase();
+ if(!sym){$('kLive').textContent='הקלד סימול — המחיר נמשך אוטומטית.';return}
+ $('kLive').textContent='מושך מחיר עבור '+sym+'…';
+ fetchQuotes([sym]).then(qs=>{
+  const q=qs[sym],p=quotePrice(q);
+  if(!p){$('kLive').textContent='אין נתון עבור '+sym;return}
+  const prev=q.previousClose,chg=prev?(p-prev)/prev*100:null;
+  $('kLive').innerHTML=`<b>${esc(sym)}</b> ${num(p)}${chg!=null?` <span class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`:''} · ${marketStateLabel(q.marketState)}`;
+  /* סימול חדש: הסטופ והיעד של הסימול הקודם לא רלוונטיים */
+  if(sym!==kFilledSym){$('kStop').value='';$('kTarget').value='';kFilledSym=sym}
+  $('kEntry').value=p;quickEngine();
+ }).catch(()=>{$('kLive').textContent='שגיאה במשיכת נתונים — אפשר להזין כניסה ידנית';});
+}
+function quickEngine(){
+ if(!window.sessionResult||quickBusy)return;
+ quickBusy=true;
+ try{
+ const s=window.sessionResult;
+ $('kPermission').textContent=s.permission;
+ $('kAllowed').textContent=money(s.allowed);
+ $('kTrades').textContent=(+$('sTrades').value||0)+' מתוך '+settings.maxTrades;
+ const sym=$('kSymbol').value.trim().toUpperCase(),side=$('kSide').value;
+ const entry=+$('kEntry').value||0,stop=+$('kStop').value||0;
+ let target=+$('kTarget').value||0;
+ const showNums=(qty,risk,rr,pos)=>{$('kQty').textContent=num(qty);$('kRisk').textContent=money(risk);$('kRR').textContent=(rr||0).toFixed(2);$('kPos').textContent=money(pos)};
+ if(!sym||!entry||!stop){
+  setDecision($('kDecision'),'info','ממתין','הזן סימול וסטופ — הכניסה נמשכת מהשוק לבד.');
+  showNums(0,0,0,0);$('kReasons').innerHTML='';quickPlan=null;return;
+ }
+ const riskMove=side==='long'?entry-stop:stop-entry;
+ if(riskMove<=0){
+  setDecision($('kDecision'),'bad','פסול','הסטופ נמצא בצד הלא נכון של הכניסה.');
+  showNums(0,0,0,0);
+  $('kReasons').innerHTML=reasonHtml('bad','בלונג הסטופ חייב להיות מתחת לכניסה, בשורט מעליה.');
+  quickPlan=null;return;
+ }
+ if(!target||(side==='long'?target<=entry:target>=entry))target=side==='long'?entry+2*riskMove:entry-2*riskMove;
+ /* סנכרון אל התכנון המלא — שני המסכים תמיד מסכימים על אותם מספרים */
+ $('tSymbol').value=sym;$('tSide').value=side;$('tEntry').value=entry;$('tStop').value=stop;
+ $('tTarget1').value=+target.toFixed(2);$('tTarget2').value=+target.toFixed(2);
+ const m=tradeMath();
+ const blockers=[],warns=[];
+ if(s.blocked)blockers.push('מושל הסיכון היומי: '+s.permission+'.');
+ if(!s.blocked&&m.qty<=0)blockers.push('אין תקציב סיכון פנוי לכמות חיובית.');
+ if(m.rr<1)blockers.push(`יחס נטו ${m.rr.toFixed(2)} — אחרי עמלות והחלקה העסקה לא מצדיקה את הסיכון.`);
+ else if(m.rr<settings.minRR)warns.push(`יחס נטו ${m.rr.toFixed(2)} מתחת לסף ${settings.minRR} — שקול יעד רחוק יותר או כניסה טובה יותר.`);
+ if(m.stopPct>2)warns.push(`הסטופ במרחק ${m.stopPct.toFixed(1)}% — הכמות הוקטנה כדי לשמור על אותו סיכון דולרי.`);
+ if(!s.blocked&&s.kind==='warn')warns.push('מצב היום: '+s.permission+' — תקציב הסיכון כבר הוקטן בהתאם.');
+ let kind,title,text;
+ if(blockers.length){kind='bad';title='פסול';text='קיים חסם — הסיבות למטה.';quickPlan=null}
+ else{
+  kind=warns.length?'warn':'good';title=warns.length?'מאושר בזהירות':'מאושר';
+  text=`${num(m.qty)} יחידות · סיכון ${money(m.netLoss)} · יעד ${num(m.weightedExit)}`;
+  quickPlan={sym,side,type:'מהיר',family:'other',entry,stop,target:m.weightedExit,t1:m.t1,t2:m.t2,qty:m.qty,position:m.position,netLoss:m.netLoss,netProfit:m.netProfit,rr:m.rr,score:0,decision:title,kind,created:new Date().toISOString(),commission:+$('tCommission').value,slippage:+$('tSlippage').value};
+ }
+ setDecision($('kDecision'),kind,title,text);
+ showNums(blockers.length?0:m.qty,blockers.length?0:m.netLoss,m.rr,blockers.length?0:m.position);
+ $('kReasons').innerHTML=[...blockers.map(x=>['bad',x]),...warns.map(x=>['warn',x])].map(x=>reasonHtml(x[0],x[1])).join('');
+ tradeEngine();
+ }finally{quickBusy=false}
+}
+function toggleDay(open,scroll){
+ const cards=$$('.dayCard');
+ const show=open!==undefined?open:cards[0].classList.contains('hide');
+ cards.forEach(c=>c.classList.toggle('hide',!show));
+ $('dayToggleBtn').textContent=show?'סגור':'פתח';
+ if(show&&scroll)cards[0].scrollIntoView({behavior:'smooth',block:'start'});
+}
+function saveQuick(){
+ if(!quickPlan||!quickPlan.qty){toast('אין עסקה מאושרת לשמירה');return}
+ positions.push({...quickPlan,status:'תוכנית',current:quickPlan.entry,id:Date.now()});
+ localStorage.setItem(storeKey+'_positions',JSON.stringify(positions));
+ renderPositions();toast('נשמר לפוזיציות');
 }
 
 function copyPlan(){
@@ -915,6 +1046,19 @@ function bind(){
  $('clearJournal').onclick=()=>{if(confirm('למחוק את היומן?')){journal=[];saveJournal()}};
  $('exportJournal').onclick=exportCsv;$('importJournal').onchange=e=>e.target.files[0]&&importCsv(e.target.files[0]);$('includeAlloc').onchange=renderJournal;
  $('applySettings').onclick=updateSettings;$('loadTodayBtn').onclick=loadTodaySession;$('saveAllBtn').onclick=saveAll;$('resetBtn').onclick=resetAll;
+ ['kSymbol','kSide','kEntry','kStop','kTarget'].forEach(id=>$(id).addEventListener('input',quickEngine));
+ let kDebounce;$('kSymbol').addEventListener('input',()=>{clearTimeout(kDebounce);kDebounce=setTimeout(refreshQuickQuote,900)});
+ $('kPullBtn').onclick=refreshQuickQuote;
+ $('kSaveBtn').onclick=saveQuick;
+ $('kFullBtn').onclick=()=>{quickEngine();document.querySelector('[data-tab="trade-panel"]').click()};
+ $('dayToggleBtn').onclick=()=>toggleDay();
+ $('kDayBtn').onclick=()=>toggleDay(true,true);
+ $$('[data-kstop]').forEach(b=>b.onclick=()=>{
+  const e=+$('kEntry').value||0;
+  if(!e){toast('אין מחיר כניסה — משוך מחיר או הזן ידנית');return}
+  const p=+b.dataset.kstop/100,v=$('kSide').value==='long'?e*(1-p):e*(1+p);
+  $('kStop').value=v.toFixed(2);quickEngine();
+ });
  $('liveRefreshBtn').onclick=refreshLiveQuote;
  $('liveToEntryBtn').onclick=()=>{if(liveLastPrice){$('tEntry').value=liveLastPrice;tradeEngine();toast('מחיר הכניסה עודכן למחיר החי')}else toast('משוך מחיר תחילה')};
  let liveDebounce;$('tSymbol').addEventListener('input',()=>{clearTimeout(liveDebounce);liveDebounce=setTimeout(refreshLiveQuote,900)});
@@ -928,11 +1072,12 @@ function init(){
  document.documentElement.dataset.theme=localStorage.getItem(storeKey+'_theme')||(deskTheme==='dark'||deskTheme==='light'?deskTheme:'light');
  restore();applySettingsToInputs();renderExposureChips();bind();renderPositions();
  $('jDate').value=new Date().toISOString().slice(0,10);
- /* קליטת סימול מ־Momentum Desk: ?symbol=SOXL פותח את מסך העסקה עם הסימול */
+ /* קליטת סימול מ־Momentum Desk: ?symbol=SOXL נוחת ישר במסך העסקה המהירה */
  const urlSym=(new URLSearchParams(location.search).get('symbol')||'').trim().toUpperCase();
- if(urlSym){$('tSymbol').value=urlSym;document.querySelector('[data-tab="trade-panel"]')?.click()}
+ if(urlSym){$('kSymbol').value=urlSym;$('tSymbol').value=urlSym}
  sessionEngine();renderJournal();
  refreshLiveQuote();
+ if($('kSymbol').value.trim())refreshQuickQuote();
  window.addEventListener('resize',()=>renderJournal());
 }
 init();
