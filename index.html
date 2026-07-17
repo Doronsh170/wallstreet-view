@@ -197,9 +197,9 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
 .chipDown{background:color-mix(in oklab,var(--bad) 15%,transparent);color:var(--bad);border-color:color-mix(in oklab,var(--bad) 35%,transparent)}
 
 /* Market scanner */
-.scanHead{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-bottom:10px}
-.scanHead .lastUpdate{text-align:left;font-size:12px;color:var(--muted)}
-#scanBtn.loading{background:color-mix(in oklab,var(--warn) 18%,var(--surface-2));border-color:var(--warn);color:var(--text)}
+.scanHead{margin-bottom:10px}
+.scanHead .lastUpdate{font-size:12px;color:var(--muted)}
+.tile.scanning{border-color:var(--warn)}
 .scanTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .scanTab{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
 .scanTab.active{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -255,7 +255,7 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
   <section class="tiles">
     <button id="scanTile" class="tile" type="button" onclick="openScanner()">
       <span class="tileIcon">📡</span>
-      <span class="tileTitle">סרוק את היקום</span>
+      <span id="scanTileTitle" class="tileTitle">סרוק את היקום</span>
       <span class="tileSub">דירוג כל המניות · תנועה, RVOL וגאפים</span>
     </button>
     <div class="tile tileSearch">
@@ -305,7 +305,6 @@ body.light .relStatus.downLag{background:#fee2e2;color:#dc2626;border-color:#fca
   <section class="card hidden" id="scannerBox">
     <h3 class="cardTitle">סורק שוק · מה זז עכשיו</h3>
     <div class="scanHead">
-      <button id="scanBtn" class="primary">סרוק את כל היקום</button>
       <span id="scanStatus" class="lastUpdate">טרם נסרק</span>
     </div>
     <div id="scanTabs" class="scanTabs"></div>
@@ -474,7 +473,7 @@ function earnChip(t){
 /* ===== סורק שוק — כל היקום ===== */
 function uniqueAssets(){return [...new Map(A.map(a=>[a.ticker,a])).values()]}
 function stopScan(){if(scanCtrl)try{scanCtrl.abort()}catch(e){}scanBusy=false;scanCtrl=null}
-function openScanner(){let box=document.getElementById("scannerBox");if(box)box.classList.remove("hidden");syncDataMode();if(!scanBusy)scanUniverse();else renderScanner();if(box)setTimeout(()=>box.scrollIntoView({behavior:"smooth",block:"start"}),60)}
+function openScanner(){if(scanBusy){stopScan();renderScanner();return}let box=document.getElementById("scannerBox");if(box)box.classList.remove("hidden");syncDataMode();scanUniverse();if(box)setTimeout(()=>box.scrollIntoView({behavior:"smooth",block:"start"}),60)}
 async function scanUniverse(){
   if(scanBusy){stopScan();renderScanner();return}
   if(!batchOk){note("סריקה מלאה דורשת את גרסת ה-Worker החדשה (worker/README.md)");return}
@@ -520,10 +519,11 @@ function setScanView(v){scanView=v;renderScanner()}
 function scanPick(t){setTicker(t);let el=document.getElementById("selectedHeader");if(el)el.scrollIntoView({behavior:"smooth",block:"start"})}
 function scanPickTheme(t){let el=document.getElementById("symbolInput");if(el)el.value="";switchTheme(t);note("הוצגה קבוצת "+t)}
 function renderScanner(){
-  let btn=document.getElementById("scanBtn"),st=document.getElementById("scanStatus"),tabsEl=document.getElementById("scanTabs"),listEl=document.getElementById("scanList");
-  if(!btn||!st||!tabsEl||!listEl)return;
-  btn.classList.toggle("loading",scanBusy);
-  btn.textContent=scanBusy?"עצור סריקה":"סרוק את כל היקום";
+  let st=document.getElementById("scanStatus"),tabsEl=document.getElementById("scanTabs"),listEl=document.getElementById("scanList");
+  if(!st||!tabsEl||!listEl)return;
+  let tile=document.getElementById("scanTile"),tl=document.getElementById("scanTileTitle");
+  if(tile)tile.classList.toggle("scanning",scanBusy);
+  if(tl)tl.textContent=scanBusy?"עצור סריקה":"סרוק את היקום";
   if(scanBusy)st.textContent=`סורק... ${Math.min(scanDone,scanTotal)}/${scanTotal}`;
   else if(scanTs)st.textContent="נסרק: "+new Date(scanTs).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})+" · "+currentModeText();
   else st.textContent="טרם נסרק";
@@ -706,6 +706,6 @@ function shareWhatsApp(){
   openWhatsAppText(text);
 }
 
-function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode=effectivePhase();applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("scanBtn").onclick=scanUniverse;document.getElementById("saveKeyBtn").onclick=saveKey;document.getElementById("clearKeyBtn").onclick=clearKey;let ki=document.getElementById("apiKey");if(ki)ki.value=key();maybeFetchEarnings();setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);/* קישור צולב: ?symbol=NVDA (למשל מתמונת המצב הפנדמנטלית) — רץ אחרי הניקוי */let urlSym=(new URLSearchParams(location.search).get("symbol")||"").trim().toUpperCase();if(urlSym&&/^[A-Z][A-Z0-9.\-]{0,11}$/.test(urlSym)){setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value=urlSym;find()},60)}render();/* רענון אוטומטי פועל תמיד ברקע, ושלב המסחר מתעדכן לבד לפי שעון ניו יורק */startAuto();setInterval(syncDataMode,30000);syncDataMode()}
+function init(){localStorage.removeItem("momentum_desk_pre_market_on_v20");dataMode=effectivePhase();applyTheme();localStorage.removeItem("momentum_desk_ticker_v20");ticker="";peersOpen=false;document.getElementById("symbolInput").value="";document.getElementById("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")find();if(e.key==="Escape")closeSuggestions()});document.getElementById("symbolInput").addEventListener("input",renderSuggestions);document.getElementById("symbolInput").addEventListener("focus",renderSuggestions);document.addEventListener("click",e=>{if(!e.target.closest(".searchWrap"))closeSuggestions()});document.getElementById("findBtn").onclick=find;document.getElementById("refreshBtn").onclick=()=>fetchGroup("manual");document.getElementById("themeBtn").onclick=toggleTheme;document.getElementById("clearDataBtn").onclick=clearData;document.getElementById("saveKeyBtn").onclick=saveKey;document.getElementById("clearKeyBtn").onclick=clearKey;let ki=document.getElementById("apiKey");if(ki)ki.value=key();maybeFetchEarnings();setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value="";ticker="";peersOpen=false;render()},0);/* קישור צולב: ?symbol=NVDA (למשל מתמונת המצב הפנדמנטלית) — רץ אחרי הניקוי */let urlSym=(new URLSearchParams(location.search).get("symbol")||"").trim().toUpperCase();if(urlSym&&/^[A-Z][A-Z0-9.\-]{0,11}$/.test(urlSym)){setTimeout(()=>{let i=document.getElementById("symbolInput");if(i)i.value=urlSym;find()},60)}render();/* רענון אוטומטי פועל תמיד ברקע, ושלב המסחר מתעדכן לבד לפי שעון ניו יורק */startAuto();setInterval(syncDataMode,30000);syncDataMode()}
 init();
 </script></body></html>
